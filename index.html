@@ -517,26 +517,21 @@
                 return;
             }
         
-            if (confirm("Clôturer la session ? Cela enverra tes stats en anonyme et créera une nouvelle grille.")) { [cite: 156]
-                    // 2. ID de session anonyme
-                    const sessionID = "ANON_" + Date.now(); [cite: 160]
-                    const sessionRef = database.ref(`session_votes/${sessionID}`); [cite: 161]
-                    
-                    let updates = {};
-                    clickedPhrases.forEach(phrase => {
-                        updates[safeEncode(phrase)] = true; [cite: 162]
-                    });
+            // 2. ID de session anonyme basé sur le timestamp
+            const sessionID = "ANON_" + Date.now();
             
-                    sessionRef.set(updates).then(() => {
-                        alert("Stats mises à jour !"); [cite: 163]
-                        createBingoCard(); 
-                    }).catch(err => {
-                        console.error("Erreur Firebase :", err);
-                        alert("Erreur lors de la mise à jour.");
-                    });
-                }
-            }
-
+            // 3. Envoi groupé vers session_votes
+            const sessionRef = database.ref(`session_votes/${sessionID}`);
+            let updates = {};
+            clickedPhrases.forEach(phrase => {
+                updates[safeEncode(phrase)] = true;
+            });
+        
+            sessionRef.set(updates).then(() => {
+                alert("Stats mises à jour !");
+                createBingoCard(); // On repart sur une nouvelle grille
+            });
+        }
         function checkWin() {
             const cells = Array.from(document.querySelectorAll('.bingo-cell'));
             const isClicked = i => cells[i].classList.contains('clicked');
@@ -596,6 +591,40 @@
                 }, 2600);
             }
         }
+
+        document.getElementById('session-lock-btn').onclick = function() {
+            if (confirm("Clôturer la session ? Cela enverra tes cases cochées aux statistiques même sans Bingo.")) {
+                manualCloseSession();
+            }
+        };
+        
+        function manualCloseSession() {
+            // 1. On récupère uniquement les cases cochées qui existent dans la banque officielle
+            const cells = Array.from(document.querySelectorAll('.bingo-cell.clicked'));
+            const clickedPhrases = cells
+                .map(cell => cell.textContent)
+                .filter(phrase => banqueDeMots.some(m => m.p === phrase));
+        
+            if (clickedPhrases.length === 0) {
+                alert("Aucune case valide cochée !");
+                return;
+            }
+        
+            // 2. ID de session anonyme basé sur le timestamp
+            const sessionID = "ANON_" + Date.now();
+            
+            // 3. Envoi groupé vers session_votes
+            const sessionRef = database.ref(`session_votes/${sessionID}`);
+            let updates = {};
+            clickedPhrases.forEach(phrase => {
+                updates[safeEncode(phrase)] = true;
+            });
+        
+            sessionRef.set(updates).then(() => {
+                alert("Stats mises à jour (en anonyme) !");
+                createBingoCard(); // On repart sur une nouvelle grille
+            });
+        }
         
         function triggerConfetti() {
             for (let i = 0; i < 100; i++) {
@@ -629,7 +658,6 @@
             if(confirm("Effacer toute la saison (Podium ET Stats des cases) ?")) {
                 database.ref('winners').remove(); 
                 database.ref('session_votes').remove();
-                alert("Saison réinitialisée.");
             }
         }
         
