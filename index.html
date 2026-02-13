@@ -365,6 +365,76 @@
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
 
     <script>
+        // --- GESTION DE L'IDENTIFIANT UNIQUE APPAREIL ---
+        function getOrCreateUserID() {
+            let userID = localStorage.getItem('bingo_user_id');
+            if (!userID) {
+                // Crée un ID unique (ex: U_k39fzh2ns)
+                userID = "U_" + Math.random().toString(36).substr(2, 9);
+                localStorage.setItem('bingo_user_id', userID);
+            }
+            return userID;
+        }
+        
+        // --- LOGIQUE DE DATE (JOURNÉE DE JEU DÉBUTE À 5H) ---
+        function getGameDayId() {
+            const now = new Date();
+            // Si on est entre 00h00 et 04h59, on reste sur la date d'hier
+            if (now.getHours() < 5) {
+                now.setDate(now.getDate() - 1);
+            }
+            // Retourne le format YYYY-MM-DD
+            return now.toISOString().split('T')[0];
+        }
+        
+        // --- LA FONCTION CERVEAU (A SYNCHRONISER AVEC FIREBASE) ---
+        async function syncSessionAndAction(actionType, phrase = null) {
+            const todayId = getGameDayId();
+            const userId = getOrCreateUserID();
+            const sessionRef = database.ref('current_session');
+            
+            // 1. Récupération de l'état global de la session
+            const snapshot = await sessionRef.once('value');
+            const session = snapshot.val();
+        
+            // 2. Vérification du changement de jour (Passé 5h du mat)
+            if (!session || session.day !== todayId) {
+                if (session && session.day !== todayId) {
+                    const dateOuv = new Date(session.openedAt);
+                    alert(`Fermeture de la session du ${session.day} (${dateOuv.getHours()}h-${new Date().getHours()}h)`);
+                }
+                // On ouvre la nouvelle session sur Firebase
+                await sessionRef.set({
+                    day: todayId,
+                    openedAt: Date.now()
+                });
+                // On force une nouvelle grille pour tout le monde
+                createBingoCard();
+            }
+        
+            // 3. Cas : Demande de réinitialisation de la grille
+            if (actionType === 'reset') {
+                const resetRef = database.ref(`user_resets/${todayId}/${userId}`);
+                const resetSnap = await resetRef.once('value');
+                
+                if (resetSnap.exists()) {
+                    alert("Tu as déjà réinitialisé ta grille aujourd'hui !");
+                } else {
+                    await resetRef.set(true);
+                    createBingoCard();
+                    alert("Nouvelle grille générée !");
+                }
+                return;
+            }
+        
+            // 4. Cas : Enregistrement d'une case cochée
+            if (actionType === 'vote' && phrase) {
+                const safeKey = safeEncode(phrase);
+                // On enregistre le vote par ID utilisateur pour éviter les doublons
+                database.ref(`session_votes/${todayId}/${safeKey}/${userId}`).set(true);
+            }
+        }
+        
         function formatName(str) {
             if (!str) return "";
             return str.toLowerCase().replace(/(^|[\s-])\S/g, match => match.toUpperCase());
@@ -450,15 +520,6 @@
             { p: "Question con", owner: null }, { p: "On mange trop tard pour Aurélie", owner: "Aurelie" }, { p: "Une réf culturelle 👑🧝🐺", owner: null },
             { p: "Quiproquo", owner: null }
         ];
-
-        // On regarde si cet appareil a déjà un ID stocké
-        let currentUserID = localStorage.getItem('bingo_user_id');
-        
-        // Si non (première visite), on en crée un nouveau
-        if (!currentUserID) {
-            currentUserID = "U_" + Math.random().toString(36).substr(2, 9);
-            localStorage.setItem('bingo_user_id', currentUserID);
-        }
         
         // 2. NAVIGATION
         function togglePresencePanel() {
@@ -490,56 +551,55 @@
         function createBingoCard() {
             const card = document.getElementById('bingo-card');
             if (!card) return;
-            card.innerHTML = ''; 
             
+            card.innerHTML = ''; // Vide la grille actuelle
+            
+            // 1. Récupération des joueurs présents
             const presents = Array.from(document.querySelectorAll('.presence-check:checked')).map(cb => cb.value);
             
             let finalSelection = [];
-            let poolBonus = ["Si tu lis ça, tu me dois une bière 🍻", "De la part de la maison 🎁", 
+            let poolBonus = [
+                "Si tu lis ça, tu me dois une bière 🍻", "De la part de la maison 🎁", 
                 "P'tit bonus ✨", "C'est bien parce que c'est toi", 
                 "Julian c'est grave un boss, nan ?", "On remercie les absents", 
-                "Parce que tu es là", "Une case offerte ! 🍀"].sort(() => Math.random() - 0.5);
+                "Parce que tu es là", "Une case offerte ! 🍀"
+            ].sort(() => Math.random() - 0.5);
         
+            // 2. Construction de la sélection
             if (presents.length === 0) {
-                // --- CAS : PERSONNE COCHÉ ---
-                // 1. On prend les phrases sans owner (max 20)
                 let sansOwner = banqueDeMots.filter(m => !m.owner).sort(() => Math.random() - 0.5);
                 finalSelection = sansOwner.slice(0, 20).map(item => ({ p: item.p, isGift: false }));
-        
-                // 2. On ajoute obligatoirement 5 bonus
                 for (let i = 0; i < 5; i++) {
                     finalSelection.push({ p: poolBonus[i], isGift: true });
                 }
             } else {
-                // --- CAS : AVEC PRÉSENTS ---
-                // On prend tout ce qui est éligible (sans owner + les cochés)
                 let eligible = banqueDeMots.filter(m => !m.owner || presents.includes(m.owner)).sort(() => Math.random() - 0.5);
-                
-                // On prend les 25 premières
                 finalSelection = eligible.slice(0, 25).map(item => ({ p: item.p, isGift: false }));
             }
         
-            // --- SÉCURITÉ : REMPLISSAGE SI < 25 ---
-            // Si après les étapes précédentes on n'a toujours pas 25 cases (manque de phrases)
+            // 3. Remplissage de sécurité
             if (finalSelection.length < 25) {
                 let j = 0;
                 while (finalSelection.length < 25) {
-                    finalSelection.push({ p: "Case libre " + (poolBonus[j % poolBonus.length]), isGift: true });
+                    finalSelection.push({ p: "Case libre : " + (poolBonus[j % poolBonus.length]), isGift: true });
                     j++;
                 }
             }
         
-            //Mélange Algorithme de Fisher-Yates
+            // 4. Mélange (Fisher-Yates)
             for (let i = finalSelection.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
                 [finalSelection[i], finalSelection[j]] = [finalSelection[j], finalSelection[i]];
             }
         
-            // Génération des cellules
+            // 5. Génération du HTML
             finalSelection.forEach((item, index) => {
                 const cell = document.createElement('div');
                 cell.className = 'bingo-cell shuffle-anim';
                 cell.textContent = item.p;
+                
+                // On stocke l'info "cadeau" dans l'élément pour la retrouver au clic
+                if (item.isGift) cell.dataset.isGift = "true";
         
                 cell.style.setProperty('--tw', (Math.random() - 0.5) * 300 + "px");
                 cell.style.setProperty('--th', (Math.random() - 0.5) * 300 + "px");
@@ -548,8 +608,20 @@
         
                 if (item.isGift) cell.classList.add('clicked');
         
+                // --- GESTION DU CLIC ---
                 cell.onclick = function() {
                     this.classList.toggle('clicked');
+                    
+                    const isNowClicked = this.classList.contains('clicked');
+                    const safeKey = safeEncode(this.textContent);
+                    const todayId = getGameDayId();
+                    const userId = getOrCreateUserID();
+        
+                    // On n'envoie aux stats QUE si ce n'est pas une case bonus/cadeau
+                    if (this.dataset.isGift !== "true") {
+                        database.ref(`session_votes/${todayId}/${safeKey}/${userId}`).set(isNowClicked ? true : null);
+                    }
+                
                     localStorage.setItem(STORAGE_KEY, card.innerHTML);
                     checkWin();
                 };
@@ -557,9 +629,6 @@
             });
         
             localStorage.setItem(STORAGE_KEY, card.innerHTML);
-            
-            // VÉRIFICATION DE L'ÉLU.E :
-            // On lance checkWin dès l'apparition pour voir si les bonus alignés créent un Bingo
             checkWin(); 
         }
         
