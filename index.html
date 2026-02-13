@@ -535,16 +535,43 @@
 
         // 3. LOGIQUE JEU
         function renderPresenceList() {
+            // Cette fonction reste identique, elle affiche juste la liste des gens
             document.getElementById('check-list').innerHTML = staff.map(name => `
                 <label class="check-item"><input type="checkbox" class="presence-check" value="${name}" checked> ${name}</label>
             `).join('');
         }
-
-        function confirmAndGenerate() {
-            if (confirm("Générer une nouvelle grille ? La progression actuelle sera effacée.")) {
-                localStorage.removeItem(STORAGE_KEY);
-                createBingoCard();
-                togglePresencePanel(); // Ferme le panneau après création
+        
+        // Voici la version fusionnée et sécurisée de ta fonction de génération
+        async function confirmAndGenerate() {
+            const userId = getOrCreateUserID();
+            const todayId = getGameDayId();
+            
+            // 1. On vérifie d'abord si l'utilisateur a déjà fait son reset aujourd'hui
+            const resetRef = database.ref(`user_resets/${todayId}/${userId}`);
+            const snapshot = await resetRef.once('value');
+        
+            if (snapshot.exists()) {
+                alert("⚠️ Tu as déjà généré une nouvelle grille aujourd'hui ! Utilise celle que tu as déjà.");
+                togglePresencePanel(); // On ferme le panneau sans rien changer
+                return; // On arrête tout ici
+            }
+        
+            // 2. Si c'est son premier reset, on demande confirmation
+            if (confirm("Générer une nouvelle grille ? (Une seule fois par jour)")) {
+                try {
+                    // On marque le reset dans Firebase AVANT de créer la carte
+                    await resetRef.set(true);
+                    
+                    // On efface l'ancienne sauvegarde locale et on crée la carte
+                    localStorage.removeItem(STORAGE_KEY);
+                    createBingoCard();
+                    
+                    togglePresencePanel(); // Ferme le panneau
+                    alert("🎮 Bonne chance ! Ta grille est prête.");
+                } catch (error) {
+                    console.error("Erreur lors du reset:", error);
+                    alert("Erreur de connexion à la base de données.");
+                }
             }
         }
 
@@ -632,23 +659,33 @@
             checkWin(); 
         }
         
-        function checkWin() {
+        async function checkWin() {
             const cells = Array.from(document.querySelectorAll('.bingo-cell'));
+            if (cells.length < 25) return; // Sécurité si la grille n'est pas chargée
+        
             const isClicked = i => cells[i].classList.contains('clicked');
-            const wins = [[0,1,2,3,4],[5,6,7,8,9],[10,11,12,13,14],[15,16,17,18,19],[20,21,22,23,24],[0,5,10,15,20],[1,6,11,16,21],[2,7,12,17,22],[3,8,13,18,23],[4,9,14,19,24],[0,6,12,18,24],[4,8,12,16,20]];
+            
+            // Les 12 combinaisons de victoire
+            const wins = [
+                [0,1,2,3,4],[5,6,7,8,9],[10,11,12,13,14],[15,16,17,18,19],[20,21,22,23,24], // Horizontales
+                [0,5,10,15,20],[1,6,11,16,21],[2,7,12,17,22],[3,8,13,18,23],[4,9,14,19,24], // Verticales
+                [0,6,12,18,24],[4,8,12,16,20] // Diagonales
+            ];
             
             const winningCombo = wins.find(c => c.every(isClicked));
         
             if (winningCombo) {
                 const msg = document.getElementById('bingo-message');
-                if (msg.classList.contains('show')) return;
+                if (!msg || msg.classList.contains('show')) return; // Évite les déclenchements en boucle
                 
-                // --- DETECTION EASTER EGG ---
+                // --- DETECTION EASTER EGG (L'ÉLU·E) ---
+                // On vérifie si TOUTES les cases de la ligne gagnante sont des cadeaux (pas dans la banque)
                 const isFullLuck = winningCombo.every(index => {
                     const txt = cells[index].textContent;
                     return !banqueDeMots.some(m => m.p === txt); 
                 });
         
+                // Mise à jour visuelle du message Bingo
                 if (isFullLuck) {
                     msg.innerHTML = "🍀 L'ÉLU·E 🍀";
                     msg.style.background = "linear-gradient(45deg, #00FF87, #60EFFF)";
@@ -660,41 +697,42 @@
                 msg.classList.add('show');
                 triggerConfetti();
         
-                // --- NOUVELLE LOGIQUE DE NOM AUTOMATIQUE ---
+                // --- LOGIQUE DE NOM AUTOMATIQUE & FIREBASE ---
                 setTimeout(async () => {
+                    const userId = getOrCreateUserID(); // On s'assure d'utiliser l'ID unique de l'appareil
+                    
                     // 1. On récupère les infos de l'utilisateur dans Firebase
-                    const userSnap = await database.ref(`users/${currentUserID}`).once('value');
+                    const userSnap = await database.ref(`users/${userId}`).once('value');
                     const userData = userSnap.val();
                     let finalName = userData ? userData.name : null;
         
-                    // 2. Si on ne connaît pas son nom, on lui demande (une seule fois)
+                    // 2. Si on ne connaît pas son nom, on lui demande (via ta fonction changePlayerName)
                     if (!finalName) {
                         const promptMsg = isFullLuck 
                             ? "Incroyable ! 5 cases bonus alignées ! Quel est ton nom, Élu·e :" 
                             : "BINGO ! Quel est ton nom pour le podium ?";
                         
-                        // On appelle la fonction de changement de nom qu'on a créée
                         await changePlayerName(promptMsg); 
                         
-                        // On récupère le nom fraîchement enregistré
-                        const updatedSnap = await database.ref(`users/${currentUserID}`).once('value');
+                        // Récupération après saisie
+                        const updatedSnap = await database.ref(`users/${userId}`).once('value');
                         finalName = updatedSnap.val() ? updatedSnap.val().name : "Anonyme";
                     }
         
-                    // 3. On prépare l'affichage (ajout du trèfle si Easter Egg)
+                    // 3. Préparation des données de victoire
                     const displayName = isFullLuck ? `${finalName} 🍀` : finalName;
                     const now = Date.now();
                     const sessionID = "S_" + Math.random().toString(36).substr(2, 9);
         
-                    // 4. Enregistrement de la victoire
+                    // 4. Enregistrement dans le Hall of Fame
                     database.ref('winners').push({ 
                         name: displayName, 
-                        userID: currentUserID,
+                        userID: userId,
                         timestamp: now,
                         lucky: isFullLuck 
                     });
         
-                    // 5. Signal pour les autres joueurs (stats)
+                    // 5. Signal global (pour que les stats des autres joueurs remontent)
                     database.ref('bingo_signal').set({
                         winner: displayName,
                         timestamp: now,
@@ -702,6 +740,7 @@
                         isLucky: isFullLuck
                     });
         
+                    // On cache le message après le traitement
                     msg.classList.remove('show');
                 }, 2600);
             }
