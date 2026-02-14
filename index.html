@@ -481,16 +481,61 @@
             let existingID = Object.keys(allUsers).find(id => allUsers[id].name === newName);
 
             if (existingID && existingID !== currentUserID) {
-                if (confirm(`Le pseudo "${newName}" appartient déjà à quelqu'un. Est-ce bien toi ?`)) {
+                if (confirm(`Le pseudo "${newName}" appartient déjà à quelqu'un. Est-ce bien toi ? Toutes vos victoires seront fusionnées.`)) {
+                    const oldUserID = currentUserID;
+                    const oldNameSnap = await database.ref(`users/${oldUserID}`).once('value');
+                    const oldName = oldNameSnap.val() && oldNameSnap.val().name ? oldNameSnap.val().name : null;
                     currentUserID = existingID;
                     localStorage.setItem('bingo_user_id', currentUserID);
-                    alert(`Bon retour, ${newName} !`);
+                    await database.ref(`users/${currentUserID}`).set({ name: newName });
+                    // --- FUSION DES VICTOIRES ---
+                    const winnersSnap = await database.ref('winners').once('value');
+                    const winners = winnersSnap.val() || {};
+                    const updates = {};
+                    Object.entries(winners).forEach(([key, win]) => {
+                        // On cible les entrées à fusionner : même ancien userID ou même ancien nom
+                        if (win.userID === oldUserID || win.name === oldName) {
+                            // On prépare le vecteur des anciens noms
+                            let prev = Array.isArray(win.previousNames) ? win.previousNames.slice() : [];
+                            if (win.name && !prev.includes(win.name)) prev.push(win.name);
+                            if (oldName && !prev.includes(oldName)) prev.push(oldName);
+                            // Mise à jour
+                            updates[`winners/${key}`] = {
+                                ...win,
+                                name: newName,
+                                userID: currentUserID,
+                                previousNames: prev
+                            };
+                        }
+                    });
+                    if (Object.keys(updates).length > 0) {
+                        await database.ref().update(updates);
+                    }
+                    alert(`Bon retour, ${newName} ! Toutes vos victoires ont été fusionnées.`);
                 } else {
                     alert("Merci de choisir un autre pseudo.");
                     return;
                 }
             } else {
                 await database.ref(`users/${currentUserID}`).set({ name: newName });
+                // Met à jour les victoires existantes de ce userID (si changement de nom sans fusion)
+                const winnersSnap = await database.ref('winners').once('value');
+                const winners = winnersSnap.val() || {};
+                const updates = {};
+                Object.entries(winners).forEach(([key, win]) => {
+                    if (win.userID === currentUserID && win.name !== newName) {
+                        let prev = Array.isArray(win.previousNames) ? win.previousNames.slice() : [];
+                        if (win.name && !prev.includes(win.name)) prev.push(win.name);
+                        updates[`winners/${key}`] = {
+                            ...win,
+                            name: newName,
+                            previousNames: prev
+                        };
+                    }
+                });
+                if (Object.keys(updates).length > 0) {
+                    await database.ref().update(updates);
+                }
                 alert(`Pseudo enregistré : ${newName}`);
             }
             updatePseudoButton();
