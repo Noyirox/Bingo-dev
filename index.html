@@ -725,6 +725,12 @@
                     const sessionID = "S_" + Math.random().toString(36).substr(2, 9);
         
                     // 4. Enregistrement dans le Hall of Fame
+                    console.log('[BINGO] Envoi vainqueur Firebase:', {
+                        name: displayName,
+                        userID: userId,
+                        timestamp: now,
+                        lucky: isFullLuck
+                    });
                     database.ref('winners').push({ 
                         name: displayName, 
                         userID: userId,
