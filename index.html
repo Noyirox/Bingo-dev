@@ -375,6 +375,9 @@
             }
             return userID;
         }
+
+        // --- GLOBAL : ID utilisateur courant ---
+        let currentUserID = getOrCreateUserID();
         
         // --- LOGIQUE DE DATE (JOURNÉE DE JEU DÉBUTE À 5H) ---
         function getGameDayId() {
