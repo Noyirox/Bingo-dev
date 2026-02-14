@@ -457,22 +457,31 @@
             } catch(e) { return atob(str); } // Repli si l'ancien format est encore là
         }
 
+        // Met à jour dynamiquement le texte du bouton pseudo
+        async function updatePseudoButton() {
+            const btn = document.getElementById('edit-name-btn');
+            if (!btn) return;
+            let userId = currentUserID || getOrCreateUserID();
+            let userSnap = await database.ref(`users/${userId}`).once('value');
+            let name = userSnap.val() && userSnap.val().name ? userSnap.val().name : null;
+            let display = name ? (name.length > 20 ? name.slice(0, 20) + '…' : name) : "Quel est ton nom ?";
+            btn.innerHTML = `✏️ ${display}`;
+        }
+
         async function changePlayerName() {
             let newName = prompt("Choisis un pseudo pour le Hall of Fame :");
             if (!newName) return;
-            newName = formatName(newName.trim()); // Utilise ta fonction pour mettre en propre
-        
+            newName = formatName(newName.trim());
+
             // On va fouiller dans Firebase pour voir si ce nom existe déjà
             const usersSnap = await database.ref('users').once('value');
             const allUsers = usersSnap.val() || {};
-            
+
             // On cherche si un autre ID possède déjà ce nom
             let existingID = Object.keys(allUsers).find(id => allUsers[id].name === newName);
-        
+
             if (existingID && existingID !== currentUserID) {
-                // Le nom existe déjà ailleurs !
                 if (confirm(`Le pseudo "${newName}" appartient déjà à quelqu'un. Est-ce bien toi ?`)) {
-                    // L'utilisateur confirme : on lie son appareil à l'ancien ID
                     currentUserID = existingID;
                     localStorage.setItem('bingo_user_id', currentUserID);
                     alert(`Bon retour, ${newName} !`);
@@ -481,10 +490,10 @@
                     return;
                 }
             } else {
-                // Nouveau nom ou simple mise à jour : on enregistre dans la table "users"
-                database.ref(`users/${currentUserID}`).set({ name: newName });
+                await database.ref(`users/${currentUserID}`).set({ name: newName });
                 alert(`Pseudo enregistré : ${newName}`);
             }
+            updatePseudoButton();
         }
         
         // 1. CONFIG
@@ -848,6 +857,7 @@
         
         // 4. INIT
         document.addEventListener('DOMContentLoaded', () => {
+            updatePseudoButton();
             renderPresenceList();
             
         // --- LISTENER DU HALL OF FAME (CHAMPIONS) ---
