@@ -660,20 +660,22 @@
         }
         
         async function checkWin() {
+            console.log('[DEBUG] checkWin appelée');
             const cells = Array.from(document.querySelectorAll('.bingo-cell'));
             if (cells.length < 25) return; // Sécurité si la grille n'est pas chargée
-        
+
             const isClicked = i => cells[i].classList.contains('clicked');
-            
+
             // Les 12 combinaisons de victoire
             const wins = [
                 [0,1,2,3,4],[5,6,7,8,9],[10,11,12,13,14],[15,16,17,18,19],[20,21,22,23,24], // Horizontales
                 [0,5,10,15,20],[1,6,11,16,21],[2,7,12,17,22],[3,8,13,18,23],[4,9,14,19,24], // Verticales
                 [0,6,12,18,24],[4,8,12,16,20] // Diagonales
             ];
-            
+
             const winningCombo = wins.find(c => c.every(isClicked));
-        
+            console.log('[DEBUG] winningCombo:', winningCombo);
+
             if (winningCombo) {
                 const msg = document.getElementById('bingo-message');
                 if (!msg || msg.classList.contains('show')) return; // Évite les déclenchements en boucle
