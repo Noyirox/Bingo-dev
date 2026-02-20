@@ -434,7 +434,8 @@
             if (actionType === 'vote' && phrase) {
                 const safeKey = safeEncode(phrase);
                 // On enregistre le vote par ID utilisateur pour éviter les doublons
-                database.ref(`session_votes/${todayId}/${safeKey}/${userId}`).set(true);
+                const sessionID = session && session.sessionID ? session.sessionID : "S_" + Math.random().toString(36).substr(2, 9);
+                database.ref(`session_votes/${sessionID}/${safeKey}/${userId}`).set(true);
             }
         }
         
@@ -646,8 +647,11 @@
 
                 // On n'envoie aux stats QUE si ce n'est pas une case bonus/cadeau
                 if (this.dataset.isGift !== "true") {
-                    console.log('[FIREBASE SEND]', `session_votes/${todayId}/${safeKey}/${userId}`, isNowClicked ? true : null);
-                    database.ref(`session_votes/${todayId}/${safeKey}/${userId}`).set(isNowClicked ? true : null);
+                    let sessionSnap = await database.ref('current_session').once('value');
+                    let session = sessionSnap.val();
+                    const sessionID = session && session.sessionID ? session.sessionID : "S_" + Math.random().toString(36).substr(2, 9);
+                    console.log('[FIREBASE SEND]', `session_votes/${sessionID}/${safeKey}/${userId}`, isNowClicked ? true : null);
+                    database.ref(`session_votes/${sessionID}/${safeKey}/${userId}`).set(isNowClicked ? true : null);
                 }
 
                 localStorage.setItem(STORAGE_KEY, card.innerHTML);
@@ -810,7 +814,7 @@
                     });
 
                     // 6. Clôture de la session du jour
-                    const todayId = getGameDayId();
+                    // const todayId = getGameDayId(); // plus utilisé
                     await database.ref('current_session').update({
                         closedAt: now,
                         closedBy: userId,
