@@ -675,31 +675,40 @@
                 const cell = document.createElement('div');
                 cell.className = 'bingo-cell shuffle-anim';
                 cell.textContent = item.p;
-                
+
                 // On stocke l'info "cadeau" dans l'élément pour la retrouver au clic
                 if (item.isGift) cell.dataset.isGift = "true";
-        
+
                 cell.style.setProperty('--tw', (Math.random() - 0.5) * 300 + "px");
                 cell.style.setProperty('--th', (Math.random() - 0.5) * 300 + "px");
                 cell.style.setProperty('--tr', (Math.random() - 0.5) * 500 + "deg");
                 cell.style.animationDelay = (index * 0.02) + "s";
-        
+
                 if (item.isGift) cell.classList.add('clicked');
-        
+
                 // --- GESTION DU CLIC ---
                 cell.onclick = function() {
                     this.classList.toggle('clicked');
-                    
+
                     const isNowClicked = this.classList.contains('clicked');
                     const safeKey = safeEncode(this.textContent);
                     const todayId = getGameDayId();
                     const userId = getOrCreateUserID();
-        
+
+                    console.log('[CASE CLICK]', {
+                        phrase: this.textContent,
+                        isGift: this.dataset.isGift,
+                        isNowClicked,
+                        todayId,
+                        userId
+                    });
+
                     // On n'envoie aux stats QUE si ce n'est pas une case bonus/cadeau
                     if (this.dataset.isGift !== "true") {
+                        console.log('[FIREBASE SEND]', `session_votes/${todayId}/${safeKey}/${userId}`, isNowClicked ? true : null);
                         database.ref(`session_votes/${todayId}/${safeKey}/${userId}`).set(isNowClicked ? true : null);
                     }
-                
+
                     localStorage.setItem(STORAGE_KEY, card.innerHTML);
                     checkWin();
                 };
