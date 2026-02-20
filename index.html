@@ -633,28 +633,28 @@
         }
 
         // --- FACTORISATION DU HANDLER DE CASE ---
-        function attachCellHandler(cell, card) {
-            cell.onclick = function() {
+        async function attachCellHandler(cell, card) {
+            cell.onclick = async function() {
                 this.classList.toggle('clicked');
 
                 const isNowClicked = this.classList.contains('clicked');
                 const safeKey = safeEncode(this.textContent);
-                const todayId = getGameDayId();
                 const userId = getOrCreateUserID();
+
+                let sessionSnap = await database.ref('current_session').once('value');
+                let session = sessionSnap.val();
+                const sessionID = session && session.sessionID ? session.sessionID : "S_" + Math.random().toString(36).substr(2, 9);
 
                 console.log('[CASE CLICK]', {
                     phrase: this.textContent,
                     isGift: this.dataset.isGift,
                     isNowClicked,
-                    todayId,
+                    sessionID,
                     userId
                 });
 
                 // On n'envoie aux stats QUE si ce n'est pas une case bonus/cadeau
                 if (this.dataset.isGift !== "true") {
-                    let sessionSnap = await database.ref('current_session').once('value');
-                    let session = sessionSnap.val();
-                    const sessionID = session && session.sessionID ? session.sessionID : "S_" + Math.random().toString(36).substr(2, 9);
                     console.log('[FIREBASE SEND]', `session_votes/${sessionID}/${safeKey}/${userId}`, isNowClicked ? true : null);
                     database.ref(`session_votes/${sessionID}/${safeKey}/${userId}`).set(isNowClicked ? true : null);
                 }
