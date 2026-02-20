@@ -481,7 +481,7 @@
             let existingID = Object.keys(allUsers).find(id => allUsers[id].name === newName);
 
             if (existingID && existingID !== currentUserID) {
-                if (confirm(`Le pseudo "${newName}" appartient déjà à quelqu'un. Est-ce bien toi ? Toutes vos victoires seront fusionnées.`)) {
+                if (confirm(`Le pseudo "${newName}" appartient déjà à quelqu'un. Est-ce que c'est toi ?`)) {
                     const oldUserID = currentUserID;
                     const oldNameSnap = await database.ref(`users/${oldUserID}`).once('value');
                     const oldName = oldNameSnap.val() && oldNameSnap.val().name ? oldNameSnap.val().name : null;
@@ -511,7 +511,7 @@
                     if (Object.keys(updates).length > 0) {
                         await database.ref().update(updates);
                     }
-                    alert(`Bon retour, ${newName} ! Toutes vos victoires ont été fusionnées.`);
+                    alert(`Bon retour, ${newName} !`);
                 } else {
                     alert("Merci de choisir un autre pseudo.");
                     return;
@@ -626,6 +626,35 @@
             }
         }
 
+        // --- FACTORISATION DU HANDLER DE CASE ---
+        function attachCellHandler(cell, card) {
+            cell.onclick = function() {
+                this.classList.toggle('clicked');
+
+                const isNowClicked = this.classList.contains('clicked');
+                const safeKey = safeEncode(this.textContent);
+                const todayId = getGameDayId();
+                const userId = getOrCreateUserID();
+
+                console.log('[CASE CLICK]', {
+                    phrase: this.textContent,
+                    isGift: this.dataset.isGift,
+                    isNowClicked,
+                    todayId,
+                    userId
+                });
+
+                // On n'envoie aux stats QUE si ce n'est pas une case bonus/cadeau
+                if (this.dataset.isGift !== "true") {
+                    console.log('[FIREBASE SEND]', `session_votes/${todayId}/${safeKey}/${userId}`, isNowClicked ? true : null);
+                    database.ref(`session_votes/${todayId}/${safeKey}/${userId}`).set(isNowClicked ? true : null);
+                }
+
+                localStorage.setItem(STORAGE_KEY, card.innerHTML);
+                checkWin();
+            };
+        }
+
         function createBingoCard() {
             const card = document.getElementById('bingo-card');
             if (!card) return;
@@ -687,31 +716,7 @@
                 if (item.isGift) cell.classList.add('clicked');
 
                 // --- GESTION DU CLIC ---
-                cell.onclick = function() {
-                    this.classList.toggle('clicked');
-
-                    const isNowClicked = this.classList.contains('clicked');
-                    const safeKey = safeEncode(this.textContent);
-                    const todayId = getGameDayId();
-                    const userId = getOrCreateUserID();
-
-                    console.log('[CASE CLICK]', {
-                        phrase: this.textContent,
-                        isGift: this.dataset.isGift,
-                        isNowClicked,
-                        todayId,
-                        userId
-                    });
-
-                    // On n'envoie aux stats QUE si ce n'est pas une case bonus/cadeau
-                    if (this.dataset.isGift !== "true") {
-                        console.log('[FIREBASE SEND]', `session_votes/${todayId}/${safeKey}/${userId}`, isNowClicked ? true : null);
-                        database.ref(`session_votes/${todayId}/${safeKey}/${userId}`).set(isNowClicked ? true : null);
-                    }
-
-                    localStorage.setItem(STORAGE_KEY, card.innerHTML);
-                    checkWin();
-                };
+                attachCellHandler(cell, card);
                 card.appendChild(cell);
             });
         
@@ -960,13 +965,10 @@
             
         const saved = localStorage.getItem(STORAGE_KEY);
             if (saved) {
-                document.getElementById('bingo-card').innerHTML = saved;
+                const card = document.getElementById('bingo-card');
+                card.innerHTML = saved;
                 document.querySelectorAll('.bingo-cell').forEach(c => {
-                    c.onclick = function() {
-                        this.classList.toggle('clicked');
-                        localStorage.setItem(STORAGE_KEY, document.getElementById('bingo-card').innerHTML);
-                        checkWin();
-                    };
+                    attachCellHandler(c, card);
                 });
             } else {
                 createBingoCard();
