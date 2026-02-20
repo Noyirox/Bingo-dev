@@ -1006,33 +1006,38 @@
             const allSessions = snap.val() || {};
             const container = document.getElementById('stats-content');
             if (!container) return;
-        
-            // 1. On calcule les totaux en comptant la présence de la clé dans chaque session
+
+            // 1. Nombre total de sessions
+            const totalSessions = Object.keys(allSessions).length;
+
+            // 2. On calcule les totaux en comptant la présence de la clé dans chaque session
             const globalCounts = {};
             Object.values(allSessions).forEach(sessionCases => {
-                // sessionCases contient toutes les safeKeys cochées lors d'une partie
                 Object.keys(sessionCases).forEach(safeKey => {
                     globalCounts[safeKey] = (globalCounts[safeKey] || 0) + 1;
                 });
             });
-        
-            // 2. On croise la banque de mots avec nos calculs de sessions
+
+            // 3. On croise la banque de mots avec nos calculs de sessions
             const allStats = banqueDeMots.map(item => {
                 const phrase = item.p;
-                const safeKey = safeEncode(phrase); // Utilise ta fonction de formatage d'accent
+                const safeKey = safeEncode(phrase);
+                const val = globalCounts[safeKey] || 0;
+                const percent = totalSessions > 0 ? Math.round((val / totalSessions) * 100) : 0;
                 return {
                     txt: phrase,
-                    val: globalCounts[safeKey] || 0
+                    val,
+                    percent
                 };
             });
-        
-            // 3. Tri : d'abord le score (décroissant), puis alphabétique
+
+            // 4. Tri : d'abord le score (décroissant), puis alphabétique
             allStats.sort((a, b) => {
                 if (b.val !== a.val) return b.val - a.val;
                 return a.txt.localeCompare(b.txt);
             });
-        
-            // 4. Génération du HTML
+
+            // 5. Génération du HTML
             container.innerHTML = allStats.map((s, index) => {
                 const isTop = index === 0 && s.val > 0;
                 return `
@@ -1060,10 +1065,10 @@
                             padding:2px 10px; 
                             border-radius:15px; 
                             font-weight:bold; 
-                            min-width:20px; 
+                            min-width:60px; 
                             text-align:center;
                         ">
-                            ${s.val}
+                            ${s.val} / ${totalSessions} (${s.percent}%)
                         </span>
                     </div>
                 `;
