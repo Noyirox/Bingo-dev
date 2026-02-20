@@ -390,36 +390,41 @@
             return now.toISOString().split('T')[0];
         }
         
-        // --- LA FONCTION CERVEAU (A SYNCHRONISER AVEC FIREBASE) ---
-        async function syncSessionAndAction(actionType, phrase = null) {
+        async function ensureActiveSession() {
             const todayId = getGameDayId();
-            const userId = getOrCreateUserID();
             const sessionRef = database.ref('current_session');
-            
-            // 1. Récupération de l'état global de la session
             const snapshot = await sessionRef.once('value');
-            const session = snapshot.val();
-        
-            // 2. Vérification du changement de jour (Passé 5h du mat)
-            if (!session || session.day !== todayId) {
+            let session = snapshot.val();
+            let created = false;
+
+            if (!session || session.day !== todayId || !session.sessionID) {
                 if (session && session.day !== todayId) {
                     const dateOuv = new Date(session.openedAt);
                     alert(`Fermeture de la session du ${session.day} (${dateOuv.getHours()}h-${new Date().getHours()}h)`);
                 }
-                // On ouvre la nouvelle session sur Firebase avec un sessionID unique
                 const newSessionID = "S_" + Math.random().toString(36).substr(2, 9);
-                await sessionRef.set({
+                session = {
                     day: todayId,
                     openedAt: Date.now(),
                     sessionID: newSessionID
-                });
-                session = { day: todayId, openedAt: Date.now(), sessionID: newSessionID };
+                };
+                await sessionRef.set(session);
+                created = true;
+            }
+
+            return { session, created };
+        }
+
+        // --- LA FONCTION CERVEAU (A SYNCHRONISER AVEC FIREBASE) ---
+        async function syncSessionAndAction(actionType, phrase = null) {
+            const userId = getOrCreateUserID();
+            const { session, created } = await ensureActiveSession();
+            if (created) {
                 createBingoCard();
             }
-        
-            // 3. Cas : Demande de réinitialisation de la grille
+
             if (actionType === 'reset') {
-                const sessionID = session && session.sessionID ? session.sessionID : "S_" + Math.random().toString(36).substr(2, 9);
+                const sessionID = session.sessionID;
                 const resetRef = database.ref(`user_resets/${sessionID}/${userId}`);
                 const resetSnap = await resetRef.once('value');
 
@@ -432,12 +437,10 @@
                 }
                 return;
             }
-        
-            // 4. Cas : Enregistrement d'une case cochée
+
             if (actionType === 'vote' && phrase) {
                 const safeKey = safeEncode(phrase);
-                // On enregistre le vote par ID utilisateur pour éviter les doublons
-                const sessionID = session && session.sessionID ? session.sessionID : "S_" + Math.random().toString(36).substr(2, 9);
+                const sessionID = session.sessionID;
                 database.ref(`session_votes/${sessionID}/${safeKey}/${userId}`).set(true);
             }
         }
@@ -605,10 +608,8 @@
         // Voici la version fusionnée et sécurisée de ta fonction de génération
         async function confirmAndGenerate() {
             const userId = getOrCreateUserID();
-            // Récupère le sessionID courant
-            let sessionSnap = await database.ref('current_session').once('value');
-            let session = sessionSnap.val();
-            const sessionID = session && session.sessionID ? session.sessionID : "S_" + Math.random().toString(36).substr(2, 9);
+            const { session } = await ensureActiveSession();
+            const sessionID = session.sessionID;
 
             // 1. On vérifie d'abord si l'utilisateur a déjà fait son reset aujourd'hui
             const resetRef = database.ref(`user_resets/${sessionID}/${userId}`);
@@ -641,12 +642,7 @@
                 const safeKey = safeEncode(this.textContent);
                 const userId = getOrCreateUserID();
 
-                let sessionSnap = await database.ref('current_session').once('value');
-                let session = sessionSnap.val();
-                if (!session || !session.sessionID) {
-                    console.warn('Aucune session active, impossible d’enregistrer le vote');
-                    return;
-                }
+                const { session } = await ensureActiveSession();
                 const sessionID = session.sessionID;
 
                 console.log('[CASE CLICK]', {
@@ -666,6 +662,23 @@
                 localStorage.setItem(STORAGE_KEY, card.innerHTML);
                 checkWin();
             };
+        }
+
+        async function initSessionAndGrid() {
+            await ensureActiveSession();
+            const saved = localStorage.getItem(STORAGE_KEY);
+            const card = document.getElementById('bingo-card');
+            if (!card) return;
+
+            if (saved) {
+                card.innerHTML = saved;
+                document.querySelectorAll('.bingo-cell').forEach(c => {
+                    attachCellHandler(c, card);
+                });
+            } else {
+                createBingoCard();
+                togglePresencePanel();
+            }
         }
 
         function createBingoCard() {
@@ -980,17 +993,7 @@
             }).join('');
         });
             
-        const saved = localStorage.getItem(STORAGE_KEY);
-            if (saved) {
-                const card = document.getElementById('bingo-card');
-                card.innerHTML = saved;
-                document.querySelectorAll('.bingo-cell').forEach(c => {
-                    attachCellHandler(c, card);
-                });
-            } else {
-                createBingoCard();
-                togglePresencePanel(); // Ouvre par défaut si pas de sauvegarde
-            }
+        initSessionAndGrid();
 
         // A. Écouter le signal de Bingo pour synchroniser les stats et l'alerte
         database.ref('bingo_signal').on('value', (snapshot) => {
