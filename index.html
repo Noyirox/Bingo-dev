@@ -643,7 +643,11 @@
 
                 let sessionSnap = await database.ref('current_session').once('value');
                 let session = sessionSnap.val();
-                const sessionID = session && session.sessionID ? session.sessionID : "S_" + Math.random().toString(36).substr(2, 9);
+                if (!session || !session.sessionID) {
+                    console.warn('Aucune session active, impossible d’enregistrer le vote');
+                    return;
+                }
+                const sessionID = session.sessionID;
 
                 console.log('[CASE CLICK]', {
                     phrase: this.textContent,
