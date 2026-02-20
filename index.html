@@ -838,10 +838,15 @@
 
                     // 6. Clôture de la session du jour
                     // const todayId = getGameDayId(); // plus utilisé
-                    await database.ref('current_session').update({
-                        closedAt: now,
-                        closedBy: userId,
-                        closedReason: 'bingo'
+                    const todayId = getGameDayId();
+                    const newSessionID = "S_" + Math.random().toString(36).substr(2, 9);
+                    await database.ref('current_session').set({
+                        day: todayId,
+                        openedAt: Date.now(),
+                        sessionID: newSessionID,
+                        lastClosedAt: now,
+                        lastClosedBy: userId,
+                        lastClosedReason: 'bingo'
                     });
 
                     // On cache le message après le traitement
@@ -879,9 +884,20 @@
                 updates[safeEncode(phrase)] = true;
             });
         
-            sessionRef.set(updates).then(() => {
+            sessionRef.set(updates).then(async () => {
+                const todayId = getGameDayId();
+                const userId = getOrCreateUserID();
+                const newSessionID = "S_" + Math.random().toString(36).substr(2, 9);
+                await database.ref('current_session').set({
+                    day: todayId,
+                    openedAt: Date.now(),
+                    sessionID: newSessionID,
+                    lastClosedAt: Date.now(),
+                    lastClosedBy: userId,
+                    lastClosedReason: 'manual'
+                });
                 alert("Stats mises à jour !");
-                createBingoCard(); // On repart sur une nouvelle grille
+                createBingoCard();
            }).catch(err => {
             console.error("Erreur Firebase :", err);
             alert("Erreur lors de la mise à jour.");
