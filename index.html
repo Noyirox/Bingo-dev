@@ -766,31 +766,27 @@
         
                 // --- LOGIQUE DE NOM AUTOMATIQUE & FIREBASE ---
                 setTimeout(async () => {
-                    const userId = getOrCreateUserID(); // On s'assure d'utiliser l'ID unique de l'appareil
-                    
+                    const userId = getOrCreateUserID();
                     // 1. On récupère les infos de l'utilisateur dans Firebase
                     const userSnap = await database.ref(`users/${userId}`).once('value');
                     const userData = userSnap.val();
                     let finalName = userData ? userData.name : null;
-        
+
                     // 2. Si on ne connaît pas son nom, on lui demande (via ta fonction changePlayerName)
                     if (!finalName) {
                         const promptMsg = isFullLuck 
                             ? "Incroyable ! 5 cases bonus alignées ! Quel est ton nom, Élu·e :" 
                             : "BINGO ! Quel est ton nom pour le podium ?";
-                        
                         await changePlayerName(promptMsg); 
-                        
-                        // Récupération après saisie
                         const updatedSnap = await database.ref(`users/${userId}`).once('value');
                         finalName = updatedSnap.val() ? updatedSnap.val().name : "Anonyme";
                     }
-        
+
                     // 3. Préparation des données de victoire
                     const displayName = isFullLuck ? `${finalName} 🍀` : finalName;
                     const now = Date.now();
                     const sessionID = "S_" + Math.random().toString(36).substr(2, 9);
-        
+
                     // 4. Enregistrement dans le Hall of Fame
                     console.log('[BINGO] Envoi vainqueur Firebase:', {
                         name: displayName,
@@ -804,7 +800,7 @@
                         timestamp: now,
                         lucky: isFullLuck 
                     });
-        
+
                     // 5. Signal global (pour que les stats des autres joueurs remontent)
                     database.ref('bingo_signal').set({
                         winner: displayName,
@@ -812,7 +808,15 @@
                         sessionID: sessionID,
                         isLucky: isFullLuck
                     });
-        
+
+                    // 6. Clôture de la session du jour
+                    const todayId = getGameDayId();
+                    await database.ref('current_session').update({
+                        closedAt: now,
+                        closedBy: userId,
+                        closedReason: 'bingo'
+                    });
+
                     // On cache le message après le traitement
                     msg.classList.remove('show');
                 }, 2600);
