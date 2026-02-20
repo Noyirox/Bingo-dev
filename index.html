@@ -608,27 +608,21 @@
             const snapshot = await resetRef.once('value');
         
             if (snapshot.exists()) {
-                alert("⚠️ Tu as déjà généré une nouvelle grille aujourd'hui ! Utilise celle que tu as déjà.");
-                togglePresencePanel(); // On ferme le panneau sans rien changer
-                return; // On arrête tout ici
-            }
-        
-            // 2. Si c'est son premier reset, on demande confirmation
-            if (confirm("Générer une nouvelle grille ? (Une seule fois par jour)")) {
-                try {
-                    // On marque le reset dans Firebase AVANT de créer la carte
-                    await resetRef.set(true);
-                    
-                    // On efface l'ancienne sauvegarde locale et on crée la carte
-                    localStorage.removeItem(STORAGE_KEY);
-                    createBingoCard();
-                    
-                    togglePresencePanel(); // Ferme le panneau
-                    alert("🎮 Bonne chance ! Ta grille est prête.");
-                } catch (error) {
-                    console.error("Erreur lors du reset:", error);
-                    alert("Erreur de connexion à la base de données.");
+                if (!confirm("Tu as déjà réinitialisé ta grille aujourd'hui, veux-tu vraiment générer une nouvelle grille ?")) {
+                    togglePresencePanel(); // On ferme le panneau sans rien changer
+                    return;
                 }
+            }
+            // Génération sans restriction
+            try {
+                // On efface l'ancienne sauvegarde locale et on crée la carte
+                localStorage.removeItem(STORAGE_KEY);
+                createBingoCard();
+                togglePresencePanel(); // Ferme le panneau
+                alert("🎮 Bonne chance ! Ta grille est prête.");
+            } catch (error) {
+                console.error("Erreur lors du reset:", error);
+                alert("Erreur de connexion à la base de données.");
             }
         }
 
