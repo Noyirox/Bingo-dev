@@ -602,24 +602,26 @@
         // Voici la version fusionnée et sécurisée de ta fonction de génération
         async function confirmAndGenerate() {
             const userId = getOrCreateUserID();
-            const todayId = getGameDayId();
-            
+            // Récupère le sessionID courant
+            let sessionSnap = await database.ref('current_session').once('value');
+            let session = sessionSnap.val();
+            const sessionID = session && session.sessionID ? session.sessionID : "S_" + Math.random().toString(36).substr(2, 9);
+
             // 1. On vérifie d'abord si l'utilisateur a déjà fait son reset aujourd'hui
-            const resetRef = database.ref(`user_resets/${todayId}/${userId}`);
+            const resetRef = database.ref(`user_resets/${sessionID}/${userId}`);
             const snapshot = await resetRef.once('value');
-        
+
             if (snapshot.exists()) {
-                if (!confirm("Tu as déjà réinitialisé ta grille aujourd'hui, veux-tu vraiment générer une nouvelle grille ?")) {
-                    togglePresencePanel(); // On ferme le panneau sans rien changer
+                if (!confirm("Tu as déjà réinitialisé ta grille pour cette session, veux-tu vraiment générer une nouvelle grille ?")) {
+                    togglePresencePanel();
                     return;
                 }
             }
             // Génération sans restriction
             try {
-                // On efface l'ancienne sauvegarde locale et on crée la carte
                 localStorage.removeItem(STORAGE_KEY);
                 createBingoCard();
-                togglePresencePanel(); // Ferme le panneau
+                togglePresencePanel();
                 alert("🎮 Bonne chance ! Ta grille est prête.");
             } catch (error) {
                 console.error("Erreur lors du reset:", error);
