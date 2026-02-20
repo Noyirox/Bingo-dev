@@ -811,7 +811,8 @@
                     // 3. Préparation des données de victoire
                     const displayName = isFullLuck ? `${finalName} 🍀` : finalName;
                     const now = Date.now();
-                    const sessionID = "S_" + Math.random().toString(36).substr(2, 9);
+                    const { session } = await ensureActiveSession();
+                    const sessionID = session.sessionID;
 
                     // 4. Enregistrement dans le Hall of Fame
                     console.log('[BINGO] Envoi vainqueur Firebase:', {
@@ -855,7 +856,7 @@
             }
         };
         
-        function manualCloseSession() {
+        async function manualCloseSession() {
             // 1. On récupère uniquement les cases cochées qui existent dans la banque officielle
             const cells = Array.from(document.querySelectorAll('.bingo-cell.clicked'));
             const clickedPhrases = cells
@@ -867,8 +868,9 @@
                 return;
             }
         
-            // 2. ID de session anonyme basé sur le timestamp
-            const sessionID = "ANON_" + Date.now();
+            // 2. Utilise la session active
+            const { session } = await ensureActiveSession();
+            const sessionID = session.sessionID;
             
             // 3. Envoi groupé vers session_votes
             const sessionRef = database.ref(`session_votes/${sessionID}`);
