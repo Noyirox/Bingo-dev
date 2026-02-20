@@ -406,22 +406,25 @@
                     const dateOuv = new Date(session.openedAt);
                     alert(`Fermeture de la session du ${session.day} (${dateOuv.getHours()}h-${new Date().getHours()}h)`);
                 }
-                // On ouvre la nouvelle session sur Firebase
+                // On ouvre la nouvelle session sur Firebase avec un sessionID unique
+                const newSessionID = "S_" + Math.random().toString(36).substr(2, 9);
                 await sessionRef.set({
                     day: todayId,
-                    openedAt: Date.now()
+                    openedAt: Date.now(),
+                    sessionID: newSessionID
                 });
-                // On force une nouvelle grille pour tout le monde
+                session = { day: todayId, openedAt: Date.now(), sessionID: newSessionID };
                 createBingoCard();
             }
         
             // 3. Cas : Demande de réinitialisation de la grille
             if (actionType === 'reset') {
-                const resetRef = database.ref(`user_resets/${todayId}/${userId}`);
+                const sessionID = session && session.sessionID ? session.sessionID : "S_" + Math.random().toString(36).substr(2, 9);
+                const resetRef = database.ref(`user_resets/${sessionID}/${userId}`);
                 const resetSnap = await resetRef.once('value');
-                
+
                 if (resetSnap.exists()) {
-                    alert("Tu as déjà réinitialisé ta grille aujourd'hui !");
+                    alert("Tu as déjà réinitialisé ta grille pour cette session !");
                 } else {
                     await resetRef.set(true);
                     createBingoCard();
