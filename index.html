@@ -1194,7 +1194,7 @@
                     const x = (i + 1) * spacing + (Math.random() * 10 - 5);
                     const sideOffset = i % 2 === 0 ? -9 : 9;
                     const y = axisY + sideOffset + (Math.random() * 3 - 1.5);
-                    const rot = i % 2 === 0 ? -10 : 10;
+                    const rot = i % 2 === 0 ? -92 : 92;
 
                     mark.style.left = `${x}px`;
                     mark.style.top = `${y}px`;
@@ -1222,7 +1222,9 @@
             await playMetazooaLoading();
 
             const popup = window.open(targetUrl, '_blank', 'noopener,noreferrer');
-            if (!popup) window.location.href = targetUrl;
+            if (!popup) {
+                alert("Autorise les pop-ups pour ouvrir MetaZooa dans un nouvel onglet.");
+            }
 
             btn.dataset.loading = '0';
         }
