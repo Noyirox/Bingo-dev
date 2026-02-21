@@ -456,6 +456,10 @@
             }));
         }
 
+        function normalizePhrase(str) {
+            return (str || "").replace(/\s+/g, " ").trim();
+        }
+
         function safeDecode(str) {
             try {
                 return decodeURIComponent(Array.prototype.map.call(atob(str), (c) => {
@@ -639,14 +643,15 @@
                 this.classList.toggle('clicked');
 
                 const isNowClicked = this.classList.contains('clicked');
-                const safeKey = safeEncode(this.textContent);
+                const phrase = normalizePhrase(this.textContent);
+                const safeKey = safeEncode(phrase);
                 const userId = getOrCreateUserID();
 
                 const { session } = await ensureActiveSession();
                 const sessionID = session.sessionID;
 
                 console.log('[CASE CLICK]', {
-                    phrase: this.textContent,
+                    phrase,
                     isGift: this.dataset.isGift,
                     isNowClicked,
                     sessionID,
@@ -865,7 +870,7 @@
             // 1. On récupère uniquement les cases cochées qui existent dans la banque officielle
             const cells = Array.from(document.querySelectorAll('.bingo-cell.clicked'));
             const clickedPhrases = cells
-                .map(cell => cell.textContent)
+                .map(cell => normalizePhrase(cell.textContent))
                 .filter(phrase => banqueDeMots.some(m => m.p === phrase));
         
             if (clickedPhrases.length === 0) {
@@ -1027,7 +1032,7 @@
         
         // 2. RECENSEMENT : Chaque joueur envoie ses cases cochées pour CETTE session
         document.querySelectorAll('.bingo-cell.clicked').forEach(cell => {
-            const phrase = cell.textContent;
+            const phrase = normalizePhrase(cell.textContent);
             
             // VERIFICATION : On ne compte la case que si elle fait partie de la banque officielle
             const existeDansBanque = banqueDeMots.some(m => m.p === phrase);
@@ -1062,7 +1067,7 @@
 
             // 3. On croise la banque de mots avec nos calculs de sessions
             const allStats = banqueDeMots.map(item => {
-                const phrase = item.p;
+                const phrase = normalizePhrase(item.p);
                 const safeKey = safeEncode(phrase);
                 const val = globalCounts[safeKey] || 0;
                 const percent = totalSessions > 0 ? Math.round((val / totalSessions) * 100) : 0;
@@ -1072,6 +1077,11 @@
                     percent
                 };
             });
+
+            const debugPhrase = "Caillou";
+            const debugKey = safeEncode(normalizePhrase(debugPhrase));
+            const debugCount = globalCounts[debugKey] || 0;
+            console.log('[DEBUG] count for Caillou:', debugCount, '/', totalSessions, debugKey);
 
             // 4. Tri : d'abord le score (décroissant), puis alphabétique
             allStats.sort((a, b) => {
