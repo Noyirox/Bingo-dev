@@ -528,6 +528,23 @@
             }
         }
 
+        async function clearUserVotesForSession(sessionID, userId) {
+            const sessionVotesRef = database.ref(`session_votes/${sessionID}`);
+            const snap = await sessionVotesRef.once('value');
+            const sessionVotes = snap.val() || {};
+            const updates = {};
+
+            Object.entries(sessionVotes).forEach(([safeKey, voters]) => {
+                if (voters && voters[userId]) {
+                    updates[`session_votes/${sessionID}/${safeKey}/${userId}`] = null;
+                }
+            });
+
+            if (Object.keys(updates).length > 0) {
+                await database.ref().update(updates);
+            }
+        }
+
         // Met à jour dynamiquement le texte du bouton pseudo
         async function updatePseudoButton() {
             const btn = document.getElementById('edit-name-btn');
@@ -701,6 +718,7 @@
             }
             // Génération sans restriction
             try {
+                await clearUserVotesForSession(sessionID, userId);
                 localStorage.removeItem(STORAGE_KEY);
                 createBingoCard();
                 showWhatsNewOnce();
