@@ -134,7 +134,7 @@
 
         #main-title-wrap {
             text-align: center;
-            margin-top: 6px;
+            margin-top: 0px;
             margin-bottom: 14px;
             width: 100%;
         }
@@ -192,12 +192,6 @@
 
         #session-lock-btn { font-size: 1.2rem; }
         #hof-btn { font-size: 1.5rem; }
-        #metazooa-btn {
-            background: transparent;
-            border: none;
-            box-shadow: none;
-            padding: 0;
-        }
 
         #metazooa-btn .metazooa-logo {
             width: 100%;
@@ -213,7 +207,46 @@
             object-fit: contain;
             filter: drop-shadow(0 1px 2px rgba(0,0,0,0.35));
         }
-        
+
+        #metazooa-loading {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.25);
+            backdrop-filter: blur(2px);
+            z-index: 7000;
+            display: none;
+            pointer-events: none;
+        }
+
+        #metazooa-loading.visible {
+            display: block;
+        }
+
+        .metazooa-loading-track {
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            height: 72px;
+        }
+
+        .metazooa-footprint {
+            position: absolute;
+            left: -12vw;
+            font-size: 1.35rem;
+            opacity: 0;
+            animation: metazooaRun 2s linear forwards;
+            will-change: transform, opacity;
+        }
+
+        @keyframes metazooaRun {
+            0% { transform: translateX(0) scale(0.8) rotate(0deg); opacity: 0; }
+            12% { opacity: 0.9; }
+            88% { opacity: 0.9; }
+            100% { transform: translateX(120vw) scale(1.05) rotate(8deg); opacity: 0; }
+        }
+
         /* --- Panneau Présence --- */
         #presence-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: none; z-index: 3500; }
         #presence-overlay.visible { display: block; }
@@ -1116,11 +1149,69 @@
                 setTimeout(() => alertBox.remove(), 500);
             }, 6000);
         }
+
+        function playMetazooaLoading() {
+            return new Promise((resolve) => {
+                let overlay = document.getElementById('metazooa-loading');
+
+                if (!overlay) {
+                    overlay = document.createElement('div');
+                    overlay.id = 'metazooa-loading';
+                    overlay.innerHTML = '<div class="metazooa-loading-track"></div>';
+                    document.body.appendChild(overlay);
+                }
+
+                const track = overlay.querySelector('.metazooa-loading-track');
+                track.innerHTML = '';
+
+                const footprints = ['🐾', '🐾', '🐾', '🐾', '🦊', '🐺', '🐯', '🐼', '🐾', '🐶', '🐱', '🐾'];
+                for (let i = 0; i < 20; i++) {
+                    const mark = document.createElement('span');
+                    mark.className = 'metazooa-footprint';
+                    mark.textContent = footprints[Math.floor(Math.random() * footprints.length)];
+                    mark.style.top = `${10 + Math.random() * 48}px`;
+                    mark.style.animationDelay = `${Math.random() * 0.7}s`;
+                    mark.style.transform = `rotate(${Math.random() * 36 - 18}deg)`;
+                    track.appendChild(mark);
+                }
+
+                overlay.classList.add('visible');
+                setTimeout(() => {
+                    overlay.classList.remove('visible');
+                    resolve();
+                }, 2000);
+            });
+        }
+
+        async function openMetazooaWithLoading(event) {
+            event.preventDefault();
+            const btn = event.currentTarget;
+            if (!btn || btn.dataset.loading === '1') return;
+
+            btn.dataset.loading = '1';
+            const targetUrl = btn.href;
+            const popup = window.open('about:blank', '_blank');
+
+            await playMetazooaLoading();
+
+            if (popup) {
+                popup.location.href = targetUrl;
+            } else {
+                window.open(targetUrl, '_blank');
+            }
+
+            btn.dataset.loading = '0';
+        }
         
         // 4. INIT
         document.addEventListener('DOMContentLoaded', () => {
             updatePseudoButton();
             renderPresenceList();
+
+            const metazooaBtn = document.getElementById('metazooa-btn');
+            if (metazooaBtn) {
+                metazooaBtn.addEventListener('click', openMetazooaWithLoading);
+            }
             
         // --- LISTENER DU HALL OF FAME (CHAMPIONS) ---
         database.ref('winners').on('value', (snap) => {
