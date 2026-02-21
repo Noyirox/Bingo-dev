@@ -136,10 +136,19 @@
         #top-actions {
             position: fixed;
             top: 15px;
+            left: 15px;
             right: 15px;
             display: flex;
-            gap: 10px;
+            justify-content: space-between;
+            align-items: center;
             z-index: 1000;
+        }
+
+        .top-actions-left,
+        .top-actions-right {
+            display: flex;
+            gap: 10px;
+            align-items: center;
         }
 
         .top-action-btn {
@@ -163,7 +172,12 @@
 
         #session-lock-btn { font-size: 1.2rem; }
         #hof-btn { font-size: 1.5rem; }
-        #metazooa-btn { font-size: 1rem; font-weight: 700; }
+        #metazooa-btn img {
+            width: 24px;
+            height: 24px;
+            object-fit: contain;
+            border-radius: 6px;
+        }
         
         /* --- Panneau Présence --- */
         #presence-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: none; z-index: 3500; }
@@ -404,9 +418,15 @@
     </div>
     
     <div id="top-actions">
-        <button id="session-lock-btn" class="top-action-btn" onclick="manualCloseSession()" title="Clôturer la session" aria-label="Clôturer la session">🔒</button>
-        <button id="hof-btn" class="top-action-btn" onclick="openHOF()" title="Ouvrir le Hall of Fame" aria-label="Ouvrir le Hall of Fame">🏆</button>
-        <a id="metazooa-btn" class="top-action-btn" href="https://metazooa.com" target="_blank" rel="noopener noreferrer" title="Ouvrir MetaZooa" aria-label="Ouvrir le site MetaZooa">↗</a>
+        <div class="top-actions-left">
+            <button id="session-lock-btn" class="top-action-btn" onclick="manualCloseSession()" title="Clôturer la session" aria-label="Clôturer la session">🔒</button>
+            <button id="hof-btn" class="top-action-btn" onclick="openHOF()" title="Ouvrir le Hall of Fame" aria-label="Ouvrir le Hall of Fame">🏆</button>
+        </div>
+        <div class="top-actions-right">
+            <a id="metazooa-btn" class="top-action-btn" href="https://metazooa.com" target="_blank" rel="noopener noreferrer" title="Ouvrir MetaZooa" aria-label="Ouvrir le site MetaZooa">
+                <img src="https://metazooa.com/favicon.ico" alt="MetaZooa">
+            </a>
+        </div>
     </div>
     
     <div style="text-align: center; margin-top: 20px; margin-bottom: 15px;">
