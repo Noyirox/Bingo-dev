@@ -225,15 +225,14 @@
         .metazooa-loading-track {
             position: absolute;
             left: 0;
-            right: 0;
-            top: 50%;
-            transform: translateY(-50%);
+            top: 0;
+            width: 100vw;
             height: 72px;
         }
 
         .metazooa-footprint {
             position: absolute;
-            left: -12vw;
+            left: -40px;
             font-size: 1.35rem;
             opacity: 0;
             animation: metazooaRun 2s linear forwards;
@@ -244,7 +243,7 @@
             0% { transform: translateX(0) scale(0.8) rotate(0deg); opacity: 0; }
             12% { opacity: 0.9; }
             88% { opacity: 0.9; }
-            100% { transform: translateX(120vw) scale(1.05) rotate(8deg); opacity: 0; }
+            100% { transform: translateX(var(--run-distance, 120vw)) scale(1.05) rotate(8deg); opacity: 0; }
         }
 
         /* --- Panneau Présence --- */
@@ -1164,6 +1163,24 @@
                 const track = overlay.querySelector('.metazooa-loading-track');
                 track.innerHTML = '';
 
+                const card = document.getElementById('bingo-card');
+                if (card) {
+                    const rect = card.getBoundingClientRect();
+                    const top = Math.max(12, rect.top - 78);
+                    const left = Math.max(8, rect.left - 14);
+                    const width = Math.min(window.innerWidth - left - 8, rect.width + 28);
+
+                    track.style.top = `${top}px`;
+                    track.style.left = `${left}px`;
+                    track.style.width = `${Math.max(180, width)}px`;
+                } else {
+                    track.style.top = '18vh';
+                    track.style.left = '8vw';
+                    track.style.width = '84vw';
+                }
+
+                const runDistance = `${track.clientWidth + 90}px`;
+
                 const footprints = ['🐾', '🐾', '🐾', '🐾', '🦊', '🐺', '🐯', '🐼', '🐾', '🐶', '🐱', '🐾'];
                 for (let i = 0; i < 20; i++) {
                     const mark = document.createElement('span');
@@ -1172,6 +1189,7 @@
                     mark.style.top = `${10 + Math.random() * 48}px`;
                     mark.style.animationDelay = `${Math.random() * 0.7}s`;
                     mark.style.transform = `rotate(${Math.random() * 36 - 18}deg)`;
+                    mark.style.setProperty('--run-distance', runDistance);
                     track.appendChild(mark);
                 }
 
