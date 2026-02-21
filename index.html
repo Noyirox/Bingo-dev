@@ -1037,6 +1037,10 @@
                 database.ref(`session_votes/${data.sessionID}/${safeKey}`).set(true);
             }
         });
+
+        // 3. Reinitialisation de la grille pour tout le monde
+        localStorage.removeItem(STORAGE_KEY);
+        createBingoCard();
         });
         
         // B. Afficher l'intégralité des Statistiques basées sur les sessions uniques
