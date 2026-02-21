@@ -1875,7 +1875,7 @@
                     const x = clamp(xBase + (nx * sideOffset) + (Math.random() * 4 - 2), 0, trackWidth - 4);
                     const y = clamp(yBase + (ny * sideOffset) + (Math.random() * 4 - 2), 0, trackHeight - 4);
                     const tangentDeg = Math.atan2(dy, dx) * (180 / Math.PI);
-                    const rot = 90 + tangentDeg + (Math.random() * 4 - 2);
+                    const rot = 90 + tangentDeg;
                     const flip = sideOffset < 0 ? 1 : -1;
 
                     mark.style.left = `${x}px`;
