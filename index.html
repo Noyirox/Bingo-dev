@@ -1169,7 +1169,7 @@
                 if (card) {
                     const rect = card.getBoundingClientRect();
                     const top = Math.max(12, rect.top - 78);
-                    const sideMargin = Math.max(16, Math.round(window.innerWidth * 0.06));
+                    const sideMargin = Math.max(8, Math.round(window.innerWidth * 0.025));
                     const left = sideMargin;
                     const width = Math.max(220, window.innerWidth - (sideMargin * 2));
 
@@ -1178,11 +1178,11 @@
                     track.style.width = `${width}px`;
                 } else {
                     track.style.top = '18vh';
-                    track.style.left = '6vw';
-                    track.style.width = '88vw';
+                    track.style.left = '2.5vw';
+                    track.style.width = '95vw';
                 }
 
-                const stepsCount = 24;
+                const stepsCount = 16;
                 const trackWidth = Math.max(220, track.clientWidth);
                 const spacing = trackWidth / (stepsCount + 1);
                 const axisY = 30;
@@ -1192,7 +1192,7 @@
                     mark.className = 'metazooa-footprint';
                     mark.textContent = '🐾';
 
-                    const x = (i + 1) * spacing + (Math.random() * 10 - 5);
+                    const x = (i + 1) * spacing + (Math.random() * 14 - 7);
                     const y = axisY + (Math.random() * 12 - 6);
                     const rot = 80;
 
