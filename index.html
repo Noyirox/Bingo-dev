@@ -96,7 +96,7 @@
 
         /* --- LA BARRE GRISE (À la place du point) --- */
         .section-divider {
-            : 60%; /* Pas trop large pour rester élégant */
+            width: 60%; /* Pas trop large pour rester élégant */
             height: 1px;
             background: #f0f2f5; /* Gris clair */
             border: none;
@@ -570,6 +570,8 @@
             border-radius: 10px;
             border: 1px solid #e1e4e8;
             font-size: 0.95rem;
+            color: #111;
+            background: #fff;
         }
 
         #owners-section {
@@ -656,6 +658,8 @@
             border-radius: 8px;
             border: 1px solid #e1e4e8;
             font-size: 0.9rem;
+            color: #111;
+            background: #fff;
         }
 
         .word-save,
@@ -669,6 +673,17 @@
 
         .word-save { background: #111; color: #fff; }
         .word-delete { background: #ffebee; color: #c62828; }
+
+        @media (max-width: 640px) {
+            .word-row {
+                grid-template-columns: 1fr;
+            }
+
+            .word-save,
+            .word-delete {
+                width: 100%;
+            }
+        }
     </style>
 </head>
 <body>
