@@ -563,6 +563,21 @@
             transform: translateX(-50%) translateY(-4px);
         }
 
+        #toast.center {
+            top: 50%;
+            bottom: auto;
+            transform: translate(-50%, -50%) scale(0.98);
+            padding: 14px 22px;
+            border-radius: 14px;
+            font-size: 1.05rem;
+            font-weight: 700;
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.28);
+        }
+
+        #toast.center.show {
+            transform: translate(-50%, -50%) scale(1);
+        }
+
         #words-search {
             width: 100%;
             box-sizing: border-box;
@@ -671,7 +686,7 @@
             font-weight: 700;
         }
 
-        .word-save { background: #111; color: #fff; }
+        .word-save { background: #4879ff; color: #fff; }
         .word-delete { background: #ffebee; color: #c62828; }
 
         @media (max-width: 640px) {
@@ -698,6 +713,7 @@
                 <li>Stats des cases en direct avec pourcentages.</li>
                 <li>Chaque Bingo (ou clotûre manuelle) termine la session en cours et réinitialise la grille pour tous.</li>
                 <li>Nouvelle session automatique chaque jour à 5h du mat' si la précédente n'était pas cloturée.</li>
+                <li>Possibilité d'ajouter de nouvelles cases et de modifier les existantes.</li>
             </ul>
             <button id="whats-new-close" onclick="closeWhatsNew()">OK, compris</button>
         </div>
@@ -1030,6 +1046,8 @@
         const database = firebase.database();
         const STORAGE_KEY = 'bingo_save_v1';
         const WHATS_NEW_KEY = 'bingo_whats_new_v2';
+        const APP_VERSION_KEY = 'bingo_app_version';
+        let updateReloadPending = false;
         const seedStaff = ["Aymeric", "Pauline", "Jérémy", "Aurélie", "Alex"];
         let staffCache = [];
         const seedWords = [
@@ -1073,6 +1091,28 @@
             const overlay = document.getElementById('whats-new-overlay');
             if (!overlay) return;
             overlay.classList.add('active');
+        }
+
+        function startVersionListener() {
+            database.ref('app_version').on('value', (snap) => {
+                const remote = snap.val();
+                if (!remote) return;
+                const remoteStr = String(remote);
+                const seen = localStorage.getItem(APP_VERSION_KEY);
+                if (!seen) {
+                    localStorage.setItem(APP_VERSION_KEY, remoteStr);
+                    return;
+                }
+                if (seen !== remoteStr) {
+                    localStorage.setItem(APP_VERSION_KEY, remoteStr);
+                    if (updateReloadPending) return;
+                    updateReloadPending = true;
+                    showToast('Mise à jour disponible !', { centered: true, duration: 1500 });
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
+                }
+            });
         }
 
         function closeWhatsNew() {
@@ -1253,15 +1293,19 @@
             showToast('Case mise a jour.');
         }
 
-        function showToast(message) {
+        function showToast(message, options = {}) {
             const toast = document.getElementById('toast');
             if (!toast) return;
+            const duration = typeof options.duration === 'number' ? options.duration : 1400;
+            const centered = Boolean(options.centered);
             toast.textContent = message;
+            toast.classList.toggle('center', centered);
             toast.classList.add('show');
             clearTimeout(toast._timer);
             toast._timer = setTimeout(() => {
                 toast.classList.remove('show');
-            }, 1400);
+                toast.classList.remove('center');
+            }, duration);
         }
 
         function deleteWord(key) {
@@ -1803,6 +1847,7 @@
         // 4. INIT
         document.addEventListener('DOMContentLoaded', () => {
             updatePseudoButton();
+            startVersionListener();
             seedStaffIfNeeded()
                 .then(() => startStaffListener())
                 .then(() => seedWordsIfNeeded())
