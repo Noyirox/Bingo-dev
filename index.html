@@ -238,14 +238,12 @@
             height: 42px;
             opacity: 0;
             background-image: url('./Emprunte-goeland.png');
-            background-color: rgba(255,255,255,0.55);
             background-size: contain;
             background-repeat: no-repeat;
             background-position: center;
             border-radius: 999px;
-            box-shadow: 0 0 0 6px rgba(255,255,255,0.35), 0 2px 6px rgba(0,0,0,0.25);
-            filter: drop-shadow(0 0 2px rgba(0,0,0,0.8));
             transform: scale(0.45) scaleY(var(--flip, 1)) rotate(var(--rot, 0deg));
+            filter: invert(1);
             animation: metazooaStep 650ms steps(3, end) forwards;
             animation-delay: var(--delay, 0ms);
             will-change: transform, opacity;
@@ -263,13 +261,6 @@
             box-shadow: 0 0 0 1px rgba(255,255,255,0.12) inset;
         }
 
-        @media (prefers-color-scheme: dark) {
-            .metazooa-footprint {
-                background-color: rgba(255,255,255,0.85);
-                box-shadow: 0 0 0 8px rgba(255,255,255,0.6), 0 2px 8px rgba(0,0,0,0.35);
-                filter: drop-shadow(0 0 3px rgba(255,255,255,0.45));
-            }
-        }
 
         /* --- Panneau Présence --- */
         #presence-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: none; z-index: 3500; }
