@@ -134,43 +134,24 @@
 
         #main-title-wrap {
             text-align: center;
-            margin-top: 20px;
-            margin-bottom: 15px;
+            margin-top: 6px;
+            margin-bottom: 14px;
             width: 100%;
         }
 
         #main-title {
             margin: 0;
-            padding: 12px 22px 8px 22px;
-            display: inline-block;
-            border-radius: 18px;
-            border: 1px solid rgba(255,255,255,0.8);
-            background: linear-gradient(145deg, rgba(255,255,255,0.9) 0%, rgba(241,245,249,0.95) 100%);
-            box-shadow: 0 12px 32px rgba(15,23,42,0.15), 0 1px 0 rgba(255,255,255,0.8) inset;
-            backdrop-filter: blur(4px);
-            line-height: 1;
-        }
-
-        #main-title .title-main {
             display: block;
-            font-size: clamp(1.8rem, 5.4vw, 2.8rem);
+            font-size: clamp(2.2rem, 8vw, 3.4rem);
             font-weight: 900;
-            letter-spacing: 2px;
+            letter-spacing: 2.2px;
             text-transform: uppercase;
             background: linear-gradient(90deg, #2563eb 0%, #7c3aed 50%, #ec4899 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            text-shadow: 0 6px 18px rgba(124,58,237,0.22);
-        }
-
-        #main-title-sub {
-            margin-top: 7px;
-            font-size: clamp(0.65rem, 2.1vw, 0.82rem);
-            font-weight: 700;
-            letter-spacing: 3px;
-            text-transform: uppercase;
-            color: #64748b;
+            text-shadow: 0 10px 24px rgba(124,58,237,0.28);
+            line-height: 1.05;
         }
 
         /* --- Actions rapides (groupées) --- */
@@ -213,11 +194,32 @@
 
         #session-lock-btn { font-size: 1.2rem; }
         #hof-btn { font-size: 1.5rem; }
+        #metazooa-btn {
+            background: #ffffff;
+            border: 1px solid rgba(15,23,42,0.12);
+        }
         #metazooa-btn img {
-            width: 24px;
-            height: 24px;
+            width: 26px;
+            height: 26px;
             object-fit: contain;
-            border-radius: 6px;
+            background: #ffffff;
+            border-radius: 7px;
+            padding: 2px;
+            box-sizing: border-box;
+            filter: drop-shadow(0 1px 2px rgba(0,0,0,0.35));
+        }
+
+        @media (prefers-color-scheme: dark) {
+            #metazooa-btn {
+                background: #ffffff;
+                border-color: rgba(255,255,255,0.7);
+                box-shadow: 0 6px 14px rgba(0,0,0,0.45);
+            }
+
+            #metazooa-btn img {
+                background: #ffffff;
+                filter: brightness(1.05) contrast(1.15) drop-shadow(0 1px 2px rgba(0,0,0,0.4));
+            }
         }
         
         /* --- Panneau Présence --- */
@@ -471,10 +473,7 @@
     </div>
     
     <div id="main-title-wrap">
-        <h1 id="main-title">
-            <span class="title-main">Big Problems</span>
-            <span id="main-title-sub">Bingo Challenge</span>
-        </h1>
+        <h1 id="main-title">Big Problems</h1>
     </div>
     
     <div id="bingo-message">BINGO!</div>
