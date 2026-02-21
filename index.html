@@ -1046,6 +1046,7 @@
         const database = firebase.database();
         const STORAGE_KEY = 'bingo_save_v1';
         const WHATS_NEW_KEY = 'bingo_whats_new_v2';
+        const FORCE_WHATS_NEW_KEY = 'bingo_force_whats_new_v1';
         const APP_VERSION_KEY = 'bingo_app_version';
         let updateReloadPending = false;
         const seedStaff = ["Aymeric", "Pauline", "Jérémy", "Aurélie", "Alex"];
@@ -1087,9 +1088,14 @@
         }
 
         function showWhatsNewOnce() {
-            if (localStorage.getItem(WHATS_NEW_KEY)) return;
             const overlay = document.getElementById('whats-new-overlay');
             if (!overlay) return;
+            if (localStorage.getItem(FORCE_WHATS_NEW_KEY)) {
+                localStorage.removeItem(FORCE_WHATS_NEW_KEY);
+                overlay.classList.add('active');
+                return;
+            }
+            if (localStorage.getItem(WHATS_NEW_KEY)) return;
             overlay.classList.add('active');
         }
 
@@ -1129,12 +1135,14 @@
         }
 
         function closeWhatsNew() {
-            localStorage.setItem(WHATS_NEW_KEY, '1');
             const overlay = document.getElementById('whats-new-overlay');
             if (overlay) overlay.classList.remove('active');
             if (updateReloadPending) {
+                localStorage.setItem(FORCE_WHATS_NEW_KEY, '1');
                 window.location.reload();
+                return;
             }
+            localStorage.setItem(WHATS_NEW_KEY, '1');
         }
 
         function openAddCasePanel() {
