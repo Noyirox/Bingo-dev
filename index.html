@@ -232,18 +232,20 @@
 
         .metazooa-footprint {
             position: absolute;
-            left: -40px;
-            font-size: 1.35rem;
+            left: 0;
+            top: 0;
+            font-size: 1.2rem;
             opacity: 0;
-            animation: metazooaRun 2s linear forwards;
+            transform: scale(0.45) rotate(var(--rot, 0deg));
+            animation: metazooaStep 320ms ease-out forwards;
+            animation-delay: var(--delay, 0ms);
             will-change: transform, opacity;
         }
 
-        @keyframes metazooaRun {
-            0% { transform: translateX(0) scale(0.8) rotate(0deg); opacity: 0; }
-            12% { opacity: 0.9; }
-            88% { opacity: 0.9; }
-            100% { transform: translateX(var(--run-distance, 120vw)) scale(1.05) rotate(8deg); opacity: 0; }
+        @keyframes metazooaStep {
+            0% { opacity: 0; transform: scale(0.45) rotate(var(--rot, 0deg)); }
+            35% { opacity: 1; transform: scale(1) rotate(var(--rot, 0deg)); }
+            100% { opacity: 0.92; transform: scale(1) rotate(var(--rot, 0deg)); }
         }
 
         /* --- Panneau Présence --- */
@@ -1179,17 +1181,25 @@
                     track.style.width = '84vw';
                 }
 
-                const runDistance = `${track.clientWidth + 90}px`;
+                const stepsCount = 18;
+                const trackWidth = Math.max(220, track.clientWidth);
+                const spacing = trackWidth / (stepsCount + 1);
+                const axisY = 30;
 
-                const footprints = ['🐾', '🐾', '🐾', '🐾', '🦊', '🐺', '🐯', '🐼', '🐾', '🐶', '🐱', '🐾'];
-                for (let i = 0; i < 20; i++) {
+                for (let i = 0; i < stepsCount; i++) {
                     const mark = document.createElement('span');
                     mark.className = 'metazooa-footprint';
-                    mark.textContent = footprints[Math.floor(Math.random() * footprints.length)];
-                    mark.style.top = `${10 + Math.random() * 48}px`;
-                    mark.style.animationDelay = `${Math.random() * 0.7}s`;
-                    mark.style.transform = `rotate(${Math.random() * 36 - 18}deg)`;
-                    mark.style.setProperty('--run-distance', runDistance);
+                    mark.textContent = '🐾';
+
+                    const x = (i + 1) * spacing + (Math.random() * 10 - 5);
+                    const sideOffset = i % 2 === 0 ? -9 : 9;
+                    const y = axisY + sideOffset + (Math.random() * 3 - 1.5);
+                    const rot = i % 2 === 0 ? -10 : 10;
+
+                    mark.style.left = `${x}px`;
+                    mark.style.top = `${y}px`;
+                    mark.style.setProperty('--rot', `${rot}deg`);
+                    mark.style.setProperty('--delay', `${Math.round(i * 105)}ms`);
                     track.appendChild(mark);
                 }
 
@@ -1208,15 +1218,11 @@
 
             btn.dataset.loading = '1';
             const targetUrl = btn.href;
-            const popup = window.open('about:blank', '_blank');
 
             await playMetazooaLoading();
 
-            if (popup) {
-                popup.location.href = targetUrl;
-            } else {
-                window.open(targetUrl, '_blank');
-            }
+            const popup = window.open(targetUrl, '_blank', 'noopener,noreferrer');
+            if (!popup) window.location.href = targetUrl;
 
             btn.dataset.loading = '0';
         }
