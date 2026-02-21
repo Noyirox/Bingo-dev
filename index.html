@@ -132,19 +132,17 @@
 
         h1 { color: #333; margin-bottom: 15px; text-shadow: 1px 1px 0px white; font-size: 1.5rem; }
 
-        /* --- Boutons Navigation --- */
-        #presence-toggle-btn, #hof-btn { 
-            position: absolute; top: 15px; background: white; border: none; 
-            border-radius: 50%; width: 45px; height: 45px; cursor: pointer; 
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1); z-index: 100; 
-        }
-        #presence-toggle-btn { left: 15px; font-size: 1.2rem; }
-        #hof-btn { right: 15px; font-size: 1.5rem; }
-        
-        /* On aligne le style sur celui du bouton HoF */
-       #session-lock-btn, #hof-btn {
-            position: absolute;
+        /* --- Actions rapides (groupées) --- */
+        #top-actions {
+            position: fixed;
             top: 15px;
+            right: 15px;
+            display: flex;
+            gap: 10px;
+            z-index: 1000;
+        }
+
+        .top-action-btn {
             background: white;
             border: none;
             border-radius: 50%;
@@ -152,17 +150,20 @@
             height: 45px;
             cursor: pointer;
             box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            z-index: 1000;
             display: flex;
             align-items: center;
             justify-content: center;
             transition: transform 0.2s;
+            color: #333;
+            text-decoration: none;
+            user-select: none;
         }
-        
-        #session-lock-btn { left: 15px; font-size: 1.2rem; }
-        #hof-btn { right: 15px; font-size: 1.5rem; }
-        
-        #session-lock-btn:hover, #hof-btn:hover { transform: scale(1.1); }
+
+        .top-action-btn:hover { transform: scale(1.08); }
+
+        #session-lock-btn { font-size: 1.2rem; }
+        #hof-btn { font-size: 1.5rem; }
+        #metazooa-btn { font-size: 1rem; font-weight: 700; }
         
         /* --- Panneau Présence --- */
         #presence-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: none; z-index: 3500; }
@@ -402,8 +403,11 @@
         ">Fermer</button>
     </div>
     
-    <button id="session-lock-btn" onclick="manualCloseSession()" title="Clôturer la session">🔒</button>
-    <button id="hof-btn" onclick="openHOF()">🏆</button>
+    <div id="top-actions">
+        <button id="session-lock-btn" class="top-action-btn" onclick="manualCloseSession()" title="Clôturer la session" aria-label="Clôturer la session">🔒</button>
+        <button id="hof-btn" class="top-action-btn" onclick="openHOF()" title="Ouvrir le Hall of Fame" aria-label="Ouvrir le Hall of Fame">🏆</button>
+        <a id="metazooa-btn" class="top-action-btn" href="https://metazooa.com" target="_blank" rel="noopener noreferrer" title="Ouvrir MetaZooa" aria-label="Ouvrir le site MetaZooa">↗</a>
+    </div>
     
     <div style="text-align: center; margin-top: 20px; margin-bottom: 15px;">
         <h1>⚠️ Big Problems ⚠️</h1>
