@@ -237,7 +237,7 @@
             font-size: 1.2rem;
             opacity: 0;
             transform: scale(0.45) rotate(var(--rot, 0deg));
-            animation: metazooaStep 320ms ease-out forwards;
+            animation: metazooaStep 420ms ease-out forwards;
             animation-delay: var(--delay, 0ms);
             will-change: transform, opacity;
         }
@@ -1169,19 +1169,20 @@
                 if (card) {
                     const rect = card.getBoundingClientRect();
                     const top = Math.max(12, rect.top - 78);
-                    const left = Math.max(8, rect.left - 14);
-                    const width = Math.min(window.innerWidth - left - 8, rect.width + 28);
+                    const sideMargin = Math.max(16, Math.round(window.innerWidth * 0.06));
+                    const left = sideMargin;
+                    const width = Math.max(220, window.innerWidth - (sideMargin * 2));
 
                     track.style.top = `${top}px`;
                     track.style.left = `${left}px`;
-                    track.style.width = `${Math.max(180, width)}px`;
+                    track.style.width = `${width}px`;
                 } else {
                     track.style.top = '18vh';
-                    track.style.left = '8vw';
-                    track.style.width = '84vw';
+                    track.style.left = '6vw';
+                    track.style.width = '88vw';
                 }
 
-                const stepsCount = 18;
+                const stepsCount = 24;
                 const trackWidth = Math.max(220, track.clientWidth);
                 const spacing = trackWidth / (stepsCount + 1);
                 const axisY = 30;
@@ -1192,14 +1193,13 @@
                     mark.textContent = '🐾';
 
                     const x = (i + 1) * spacing + (Math.random() * 10 - 5);
-                    const sideOffset = i % 2 === 0 ? -9 : 9;
-                    const y = axisY + sideOffset + (Math.random() * 3 - 1.5);
-                    const rot = i % 2 === 0 ? -92 : 92;
+                    const y = axisY + (Math.random() * 12 - 6);
+                    const rot = -92;
 
                     mark.style.left = `${x}px`;
                     mark.style.top = `${y}px`;
                     mark.style.setProperty('--rot', `${rot}deg`);
-                    mark.style.setProperty('--delay', `${Math.round(i * 105)}ms`);
+                    mark.style.setProperty('--delay', `${Math.round(i * 115)}ms`);
                     track.appendChild(mark);
                 }
 
@@ -1207,7 +1207,7 @@
                 setTimeout(() => {
                     overlay.classList.remove('visible');
                     resolve();
-                }, 2000);
+                }, 3000);
             });
         }
 
@@ -1221,10 +1221,7 @@
 
             await playMetazooaLoading();
 
-            const popup = window.open(targetUrl, '_blank', 'noopener,noreferrer');
-            if (!popup) {
-                alert("Autorise les pop-ups pour ouvrir MetaZooa dans un nouvel onglet.");
-            }
+            window.open(targetUrl, '_blank', 'noopener,noreferrer');
 
             btn.dataset.loading = '0';
         }
