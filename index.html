@@ -132,6 +132,28 @@
 
         h1 { color: #333; margin-bottom: 15px; text-shadow: 1px 1px 0px white; font-size: 1.5rem; }
 
+        #main-title-wrap {
+            text-align: center;
+            margin-top: 20px;
+            margin-bottom: 15px;
+        }
+
+        #main-title {
+            margin: 0;
+            padding: 12px 24px;
+            display: inline-block;
+            font-size: clamp(1.7rem, 5.2vw, 2.5rem);
+            font-weight: 900;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: #ffffff;
+            background: linear-gradient(135deg, #ef4444 0%, #f97316 50%, #ef4444 100%);
+            border: 2px solid #b91c1c;
+            border-radius: 16px;
+            box-shadow: 0 10px 24px rgba(185,28,28,0.35), 0 2px 0 rgba(255,255,255,0.2) inset;
+            text-shadow: 0 2px 0 rgba(0,0,0,0.25), 0 6px 14px rgba(0,0,0,0.3);
+        }
+
         /* --- Actions rapides (groupées) --- */
         #top-actions {
             position: fixed;
@@ -429,8 +451,8 @@
         </div>
     </div>
     
-    <div style="text-align: center; margin-top: 20px; margin-bottom: 15px;">
-        <h1>⚠️ Big Problems ⚠️</h1>
+    <div id="main-title-wrap">
+        <h1 id="main-title">⚠️ Big Problems ⚠️</h1>
     </div>
     
     <div id="bingo-message">BINGO!</div>
