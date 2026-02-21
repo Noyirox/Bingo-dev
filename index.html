@@ -309,10 +309,63 @@
             z-index: 7000;
         }
         #admin-reset-hof { position: absolute; top: 15px; right: 15px; background: #ffebee; color: #d32f2f; border: none; padding: 5px 10px; border-radius: 8px; cursor: pointer; }
+        #whats-new-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.55);
+            z-index: 8000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        #whats-new-overlay.active { display: flex; }
+        #whats-new-panel {
+            width: min(560px, 92vw);
+            background: #fff;
+            border-radius: 16px;
+            padding: 20px 22px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+        }
+        #whats-new-panel h2 {
+            margin: 0 0 10px 0;
+            font-size: 1.2rem;
+            color: #222;
+        }
+        #whats-new-panel ul {
+            margin: 0 0 14px 18px;
+            padding: 0;
+            color: #333;
+            font-size: 0.95rem;
+        }
+        #whats-new-panel li { margin: 6px 0; }
+        #whats-new-close {
+            border: none;
+            background: #111;
+            color: #fff;
+            padding: 10px 16px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 700;
+        }
     </style>
 </head>
 <body>
     <div id="presence-overlay" onclick="togglePresencePanel()"></div>
+    <div id="whats-new-overlay">
+        <div id="whats-new-panel">
+            <h2>Petites nouveautes croustillantes</h2>
+            <ul>
+                <li>Pseudo dynamique + identifiant unique par personne.</li>
+                <li>Changement de pseudo sans perdre ses victoires.</li>
+                <li>Podium qui regroupe les ex aequo sous la meme medaille.</li>
+                <li>Stats en direct avec pourcentages.</li>
+                <li>Chaque Bingo (ou cloture manuelle) termine la session et reset la grille pour tous.</li>
+                <li>Nouvelle session automatique chaque jour a 5h si la precedente n'etait pas cloturee.</li>
+            </ul>
+            <button id="whats-new-close" onclick="closeWhatsNew()">OK, compris</button>
+        </div>
+    </div>
     
     <div id="presence-settings">
         <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -571,10 +624,11 @@
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
         const STORAGE_KEY = 'bingo_save_v1';
+        const WHATS_NEW_KEY = 'bingo_whats_new_v2';
         const staff = ["Aymeric", "Pauline", "Jeremy", "Aurelie", "Alex"];
         const banqueDeMots = [
             { p: "Zoophilie 😻", owner: "Aymeric" }, { p: "Rachel 👽", owner: "Aymeric" }, { p: "H word", owner: "Aymeric" },
-            { p: "Gaëtan vient porter les clefs", owner: "Aymeric" }, { p: "Aymeric nous abandonne pour insta", owner: "Aymeric" },
+            { p: "Gaëtan vient porter les clefs 🔑", owner: "Aymeric" }, { p: "Aymeric nous abandonne pour insta", owner: "Aymeric" },
             { p: "Gaëtan a une nouvelle aventure dans le train", owner: "Aymeric" }, { p: "Bizutage", owner: "Aymeric" }, { p: "Grosso phobie", owner: "Aymeric" },
             { p: "Pauline fait le jeu « di »", owner: "Pauline" }, { p: "Les anecdotes de Paupau", owner: "Pauline" },
             { p: "Pauline est vieille 👵", owner: "Pauline" }, { p: "Quelqu'un force le bingo", owner: null }, { p: "🏰 Château-Double 🏰", owner: "Pauline" },
@@ -593,7 +647,7 @@
             { p: "Calvitie évoquée 👴", owner: null }, { p: "Anciens cassos du labo", owner: null }, { p: "Quelqu'un loupe son panier 🏀", owner: null },
             { p: "T le maudit", owner: null }, { p: "Les Zommes ♂️", owner: null }, { p: "Caillou 🗿", owner: null },
             { p: "Question con", owner: null }, { p: "On mange trop tard pour Aurélie", owner: "Aurelie" }, { p: "Une réf culturelle 👑🧝🐺", owner: null },
-            { p: "Quiproquo", owner: null }
+            { p: "Quiproquo", owner: null }, { p: "Administration française 🇫🇷", owner: null }
         ];
         
         // 2. NAVIGATION
@@ -603,6 +657,19 @@
             const isVisible = panel.classList.toggle('visible');
             overlay.classList.toggle('visible');
             document.body.style.overflow = isVisible ? 'hidden' : 'auto';
+        }
+
+        function showWhatsNewOnce() {
+            if (localStorage.getItem(WHATS_NEW_KEY)) return;
+            const overlay = document.getElementById('whats-new-overlay');
+            if (!overlay) return;
+            overlay.classList.add('active');
+        }
+
+        function closeWhatsNew() {
+            localStorage.setItem(WHATS_NEW_KEY, '1');
+            const overlay = document.getElementById('whats-new-overlay');
+            if (overlay) overlay.classList.remove('active');
         }
 
         function openHOF() { document.getElementById('hof-panel').classList.add('active'); }
@@ -636,6 +703,7 @@
             try {
                 localStorage.removeItem(STORAGE_KEY);
                 createBingoCard();
+                showWhatsNewOnce();
                 togglePresencePanel();
                 alert("🎮 Bonne chance ! Ta grille est prête.");
             } catch (error) {
@@ -689,6 +757,7 @@
                 });
             } else {
                 createBingoCard();
+                showWhatsNewOnce();
                 togglePresencePanel();
             }
         }
