@@ -1093,6 +1093,22 @@
             overlay.classList.add('active');
         }
 
+        function showUpdatePanel() {
+            const overlay = document.getElementById('whats-new-overlay');
+            if (!overlay) return;
+            const panel = document.getElementById('whats-new-panel');
+            const title = panel ? panel.querySelector('h2') : null;
+            const list = panel ? panel.querySelector('ul') : null;
+            const btn = document.getElementById('whats-new-close');
+
+            if (title) title.textContent = 'Mise a jour disponible !';
+            if (list) {
+                list.innerHTML = '<li>Une nouvelle version est disponible.</li><li>Clique sur Recharger pour appliquer la mise a jour.</li>';
+            }
+            if (btn) btn.textContent = 'Recharger';
+            overlay.classList.add('active');
+        }
+
         function startVersionListener() {
             database.ref('app_version').on('value', (snap) => {
                 const remote = snap.val();
@@ -1107,10 +1123,7 @@
                     localStorage.setItem(APP_VERSION_KEY, remoteStr);
                     if (updateReloadPending) return;
                     updateReloadPending = true;
-                    showToast('Mise à jour disponible !', { centered: true, duration: 1500 });
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 1500);
+                    showUpdatePanel();
                 }
             });
         }
@@ -1119,6 +1132,9 @@
             localStorage.setItem(WHATS_NEW_KEY, '1');
             const overlay = document.getElementById('whats-new-overlay');
             if (overlay) overlay.classList.remove('active');
+            if (updateReloadPending) {
+                window.location.reload();
+            }
         }
 
         function openAddCasePanel() {
