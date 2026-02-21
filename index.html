@@ -227,7 +227,7 @@
             left: 0;
             top: 0;
             width: 100vw;
-            height: 72px;
+            height: 100vh;
         }
 
         .metazooa-footprint {
@@ -1797,45 +1797,86 @@
 
                 overlay.classList.add('visible');
 
-                const card = document.getElementById('bingo-card');
-                let trackWidthPx = 0;
-                if (card) {
-                    const rect = card.getBoundingClientRect();
-                    const top = Math.max(12, rect.top - 78);
-                    const sideMargin = Math.max(8, Math.round(window.innerWidth * 0.025));
-                    const left = sideMargin;
-                    const width = Math.max(220, window.innerWidth - (sideMargin * 2));
-                    trackWidthPx = width;
-
-                    track.style.top = `${top}px`;
-                    track.style.left = `${left}px`;
-                    track.style.width = `${width}px`;
-                } else {
-                    track.style.top = '18vh';
-                    track.style.left = '2.5vw';
-                    track.style.width = '95vw';
-                    trackWidthPx = Math.max(220, Math.round(window.innerWidth * 0.95));
-                }
+                const trackWidthPx = Math.max(240, window.innerWidth);
+                const trackHeightPx = Math.max(320, window.innerHeight);
+                track.style.top = '0px';
+                track.style.left = '0px';
+                track.style.width = '100vw';
+                track.style.height = '100vh';
 
                 const stepsCount = 16;
                 const stepDelayMs = 120;
                 const stepAnimMs = 650;
                 const trackWidth = Math.max(220, trackWidthPx);
-                const axisY = 30;
-                const sidePadding = 6;
-                const usableWidth = Math.max(60, trackWidth - (sidePadding * 2));
+                const trackHeight = Math.max(220, trackHeightPx);
+                const marginX = Math.max(24, Math.round(trackWidth * 0.06));
+                const marginY = 16;
+                const leftToRight = Math.random() > 0.5;
+                const startX = leftToRight
+                    ? marginX + Math.random() * (trackWidth * 0.2)
+                    : trackWidth - marginX - (Math.random() * (trackWidth * 0.2));
+                const endX = leftToRight
+                    ? trackWidth - marginX - (Math.random() * (trackWidth * 0.2))
+                    : marginX + Math.random() * (trackWidth * 0.2);
+                const startY = marginY + Math.random() * (trackHeight - (marginY * 2));
+                const endY = marginY + Math.random() * (trackHeight - (marginY * 2));
+                const isCurved = Math.random() > 0.5;
+                const clamp = (val, min, max) => Math.min(max, Math.max(min, val));
+
+                let c1 = null;
+                let c2 = null;
+                if (isCurved) {
+                    c1 = {
+                        x: clamp(startX + (leftToRight ? 1 : -1) * (trackWidth * 0.15) + (Math.random() * 120 - 60), marginX, trackWidth - marginX),
+                        y: clamp(startY + (Math.random() * trackHeight * 0.4 - trackHeight * 0.2), marginY, trackHeight - marginY)
+                    };
+                    c2 = {
+                        x: clamp(endX - (leftToRight ? 1 : -1) * (trackWidth * 0.15) + (Math.random() * 120 - 60), marginX, trackWidth - marginX),
+                        y: clamp(endY + (Math.random() * trackHeight * 0.4 - trackHeight * 0.2), marginY, trackHeight - marginY)
+                    };
+                }
 
                 for (let i = 0; i < stepsCount; i++) {
                     const mark = document.createElement('span');
                     mark.className = 'metazooa-footprint';
 
                     const progress = stepsCount === 1 ? 0 : (i / (stepsCount - 1));
-                    const xBase = sidePadding + (progress * usableWidth);
-                    const x = Math.min(trackWidth - sidePadding, Math.max(sidePadding, xBase + (Math.random() * 10 - 5)));
+                    const t = progress;
+                    const oneMinusT = 1 - t;
+                    let xBase = 0;
+                    let yBase = 0;
+                    let dx = endX - startX;
+                    let dy = endY - startY;
+
+                    if (isCurved) {
+                        xBase = (oneMinusT * oneMinusT * oneMinusT * startX)
+                            + (3 * oneMinusT * oneMinusT * t * c1.x)
+                            + (3 * oneMinusT * t * t * c2.x)
+                            + (t * t * t * endX);
+                        yBase = (oneMinusT * oneMinusT * oneMinusT * startY)
+                            + (3 * oneMinusT * oneMinusT * t * c1.y)
+                            + (3 * oneMinusT * t * t * c2.y)
+                            + (t * t * t * endY);
+                        dx = (3 * oneMinusT * oneMinusT * (c1.x - startX))
+                            + (6 * oneMinusT * t * (c2.x - c1.x))
+                            + (3 * t * t * (endX - c2.x));
+                        dy = (3 * oneMinusT * oneMinusT * (c1.y - startY))
+                            + (6 * oneMinusT * t * (c2.y - c1.y))
+                            + (3 * t * t * (endY - c2.y));
+                    } else {
+                        xBase = startX + (endX - startX) * t;
+                        yBase = startY + (endY - startY) * t;
+                    }
+
+                    const tangentLen = Math.max(0.001, Math.hypot(dx, dy));
+                    const nx = -dy / tangentLen;
+                    const ny = dx / tangentLen;
                     const sideOffset = i % 2 === 0 ? -16 : 16;
-                    const y = axisY + sideOffset + (Math.random() * 8 - 4);
-                    const rot = 80;
-                    const flip = i % 2 === 0 ? 1 : -1;
+                    const x = clamp(xBase + (nx * sideOffset) + (Math.random() * 4 - 2), 0, trackWidth - 4);
+                    const y = clamp(yBase + (ny * sideOffset) + (Math.random() * 4 - 2), 0, trackHeight - 4);
+                    const tangentDeg = Math.atan2(dy, dx) * (180 / Math.PI);
+                    const rot = 90 + tangentDeg + (Math.random() * 4 - 2);
+                    const flip = sideOffset < 0 ? 1 : -1;
 
                     mark.style.left = `${x}px`;
                     mark.style.top = `${y}px`;
