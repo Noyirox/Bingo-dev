@@ -234,18 +234,41 @@
             position: absolute;
             left: 0;
             top: 0;
-            font-size: 1.2rem;
+            width: 42px;
+            height: 42px;
             opacity: 0;
-            transform: scale(0.45) rotate(var(--rot, 0deg));
-            animation: metazooaStep 420ms ease-out forwards;
+            background-image: url('./Emprunte-goeland.png');
+            background-color: rgba(255,255,255,0.55);
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            border-radius: 999px;
+            box-shadow: 0 0 0 6px rgba(255,255,255,0.35), 0 2px 6px rgba(0,0,0,0.25);
+            filter: drop-shadow(0 0 2px rgba(0,0,0,0.8));
+            transform: scale(0.45) scaleY(var(--flip, 1)) rotate(var(--rot, 0deg));
+            animation: metazooaStep 650ms steps(3, end) forwards;
             animation-delay: var(--delay, 0ms);
             will-change: transform, opacity;
         }
 
         @keyframes metazooaStep {
-            0% { opacity: 0; transform: scale(0.45) rotate(var(--rot, 0deg)); }
-            35% { opacity: 1; transform: scale(1) rotate(var(--rot, 0deg)); }
-            100% { opacity: 0.92; transform: scale(1) rotate(var(--rot, 0deg)); }
+            0% { opacity: 0; transform: scale(0.45) scaleY(var(--flip, 1)) rotate(var(--rot, 0deg)); }
+            45% { opacity: 1; transform: scale(1) scaleY(var(--flip, 1)) rotate(var(--rot, 0deg)); }
+            100% { opacity: 1; transform: scale(1) scaleY(var(--flip, 1)) rotate(var(--rot, 0deg)); }
+        }
+
+        .metazooa-loading-track {
+            background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.28) 12%, rgba(255,255,255,0.28) 88%, rgba(255,255,255,0) 100%);
+            border-radius: 999px;
+            box-shadow: 0 0 0 1px rgba(255,255,255,0.12) inset;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .metazooa-footprint {
+                background-color: rgba(255,255,255,0.85);
+                box-shadow: 0 0 0 8px rgba(255,255,255,0.6), 0 2px 8px rgba(0,0,0,0.35);
+                filter: drop-shadow(0 0 3px rgba(255,255,255,0.45));
+            }
         }
 
         /* --- Panneau Présence --- */
@@ -1165,13 +1188,17 @@
                 const track = overlay.querySelector('.metazooa-loading-track');
                 track.innerHTML = '';
 
+                overlay.classList.add('visible');
+
                 const card = document.getElementById('bingo-card');
+                let trackWidthPx = 0;
                 if (card) {
                     const rect = card.getBoundingClientRect();
                     const top = Math.max(12, rect.top - 78);
                     const sideMargin = Math.max(8, Math.round(window.innerWidth * 0.025));
                     const left = sideMargin;
                     const width = Math.max(220, window.innerWidth - (sideMargin * 2));
+                    trackWidthPx = width;
 
                     track.style.top = `${top}px`;
                     track.style.left = `${left}px`;
@@ -1180,10 +1207,13 @@
                     track.style.top = '18vh';
                     track.style.left = '2.5vw';
                     track.style.width = '95vw';
+                    trackWidthPx = Math.max(220, Math.round(window.innerWidth * 0.95));
                 }
 
                 const stepsCount = 16;
-                const trackWidth = Math.max(220, track.clientWidth);
+                const stepDelayMs = 120;
+                const stepAnimMs = 650;
+                const trackWidth = Math.max(220, trackWidthPx);
                 const axisY = 30;
                 const sidePadding = 6;
                 const usableWidth = Math.max(60, trackWidth - (sidePadding * 2));
@@ -1191,26 +1221,28 @@
                 for (let i = 0; i < stepsCount; i++) {
                     const mark = document.createElement('span');
                     mark.className = 'metazooa-footprint';
-                    mark.textContent = '🐾';
 
                     const progress = stepsCount === 1 ? 0 : (i / (stepsCount - 1));
                     const xBase = sidePadding + (progress * usableWidth);
                     const x = Math.min(trackWidth - sidePadding, Math.max(sidePadding, xBase + (Math.random() * 10 - 5)));
-                    const y = axisY + (Math.random() * 12 - 6);
+                    const sideOffset = i % 2 === 0 ? -16 : 16;
+                    const y = axisY + sideOffset + (Math.random() * 8 - 4);
                     const rot = 80;
+                    const flip = i % 2 === 0 ? 1 : -1;
 
                     mark.style.left = `${x}px`;
                     mark.style.top = `${y}px`;
                     mark.style.setProperty('--rot', `${rot}deg`);
-                    mark.style.setProperty('--delay', `${Math.round(i * 115)}ms`);
+                    mark.style.setProperty('--flip', `${flip}`);
+                    mark.style.setProperty('--delay', `${Math.round(i * stepDelayMs)}ms`);
                     track.appendChild(mark);
                 }
 
-                overlay.classList.add('visible');
+                const totalDuration = ((stepsCount - 1) * stepDelayMs) + stepAnimMs;
                 setTimeout(() => {
                     overlay.classList.remove('visible');
                     resolve();
-                }, 3000);
+                }, totalDuration);
             });
         }
 
