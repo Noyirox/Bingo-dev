@@ -1872,6 +1872,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             updatePseudoButton();
             startVersionListener();
+            showWhatsNewOnce();
             seedStaffIfNeeded()
                 .then(() => startStaffListener())
                 .then(() => seedWordsIfNeeded())
