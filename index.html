@@ -243,7 +243,7 @@
             background-position: center;
             border-radius: 999px;
             transform: scale(0.45) scaleY(var(--flip, 1)) rotate(var(--rot, 0deg));
-            filter: invert(1);
+            filter: drop-shadow(0 1px 1px rgba(0,0,0,0.25));
             animation: metazooaStep 650ms steps(3, end) forwards;
             animation-delay: var(--delay, 0ms);
             will-change: transform, opacity;
@@ -255,10 +255,10 @@
             100% { opacity: 1; transform: scale(1) scaleY(var(--flip, 1)) rotate(var(--rot, 0deg)); }
         }
 
-        .metazooa-loading-track {
-            background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.28) 12%, rgba(255,255,255,0.28) 88%, rgba(255,255,255,0) 100%);
-            border-radius: 999px;
-            box-shadow: 0 0 0 1px rgba(255,255,255,0.12) inset;
+        @media (prefers-color-scheme: dark) {
+            .metazooa-footprint {
+                filter: invert(1) drop-shadow(0 1px 1px rgba(0,0,0,0.35));
+            }
         }
 
 
