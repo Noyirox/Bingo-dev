@@ -1184,15 +1184,18 @@
 
                 const stepsCount = 16;
                 const trackWidth = Math.max(220, track.clientWidth);
-                const spacing = trackWidth / (stepsCount + 1);
                 const axisY = 30;
+                const sidePadding = 6;
+                const usableWidth = Math.max(60, trackWidth - (sidePadding * 2));
 
                 for (let i = 0; i < stepsCount; i++) {
                     const mark = document.createElement('span');
                     mark.className = 'metazooa-footprint';
                     mark.textContent = '🐾';
 
-                    const x = (i + 1) * spacing + (Math.random() * 14 - 7);
+                    const progress = stepsCount === 1 ? 0 : (i / (stepsCount - 1));
+                    const xBase = sidePadding + (progress * usableWidth);
+                    const x = Math.min(trackWidth - sidePadding, Math.max(sidePadding, xBase + (Math.random() * 10 - 5)));
                     const y = axisY + (Math.random() * 12 - 6);
                     const rot = 80;
 
